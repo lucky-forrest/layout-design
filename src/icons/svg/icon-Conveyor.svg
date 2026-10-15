@@ -1,0 +1,12 @@
+<svg id="图层_1" data-name="图层 1"
+  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <defs>
+    <style>.cls-2{stroke:#000;stroke-miterlimit:10;stroke-width:0.5px;}</style>
+  </defs>
+  <title>Conveyor</title>
+  <rect  x="0.25" y="0.25" width="71.5" height="71.5"/>
+  <path d="M71.5.5v71H.5V.5h71M72,0H0V72H72V0Z" transform="translate(0 0)"/>
+  <line class="cls-2" x1="17.5" y1="0.5" x2="17.5" y2="71.5"/>
+  <line class="cls-2" x1="35.5" x2="35.5" y2="72"/>
+  <line class="cls-2" x1="53.5" x2="53.5" y2="72"/>
+</svg>

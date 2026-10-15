@@ -1,0 +1,25 @@
+export default [
+  /* eslint-disable */
+  'arrows',
+  'layout-AGV',
+  'layout-BCR',
+  'layout-Buffer',
+  'layout-Cell-Cassette',
+  'layout-Conveyor',
+  'layout-Conveyor+TT',
+  'layout-Elevator',
+  'layout-MGV',
+  'layout-Normal-Cassette',
+  'layout-Processing-Module',
+  'layout-Reader-VCR',
+  'layout-Robot(Double-Arm)',
+  'layout-Robot(Single-Arm)',
+  'layout-Scrap',
+  'layout-Stage',
+  'layout-Stock',
+  'layout-Wire-Buffer',
+  'layout-Wire-Cassette',
+  'layout-eqp-1',
+  'layout-eqp-2',
+  'layout-eqp-3'
+]

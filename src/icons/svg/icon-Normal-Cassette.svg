@@ -1,0 +1,14 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
+  <title>Normal-Cassette</title>
+    <defs>
+    <style>
+      .cls-2 {
+        stroke:#000;
+      }
+    </style>
+  </defs>
+  <rect id="矩形_1" data-name="矩形 1" x="7" y="7" width="58" height="58" rx="6" ry="6"/>
+  <path id="矩形_2" data-name="矩形 2" class="cls-2" d="M9.471,10.128L10.244,9.4,62.017,63.113l-0.773.728Z"/>
+  <path id="矩形_2_拷贝" data-name="矩形 2 拷贝" class="cls-2" d="M61.57,8.68l0.747,0.755L9.938,62.557,9.191,61.8Z"/>
+</svg>

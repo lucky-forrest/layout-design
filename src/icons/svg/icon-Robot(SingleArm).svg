@@ -1,0 +1,17 @@
+<svg id="图层_1" data-name="图层 1"
+  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 55.13">
+  <defs>
+    <style>
+    .cls-1{fill:#73fbfd;}
+    .cls-2{fill:#d6fcd0;}
+    .cls-3{fill:#fffefe;}
+    .cls-2,.cls-3{stroke:#000;stroke-width:1px;}
+    </style>
+  </defs>
+  <title>Robot（Single Arm）</title>
+  <circle class="cls-1" cx="25" cy="30.13" r="24.87"/>
+  <path d="M36,11.25A24.75,24.75,0,1,1,11.25,36,24.77,24.77,0,0,1,36,11.25M36,11A25,25,0,1,0,61,36,25,25,0,0,0,36,11Z" transform="translate(-11 -5.88)"/>
+  <rect class="cls-2" x="8" y="37.13" width="34" height="11"/>
+  <rect class="cls-3" x="8" y="0.13" width="7" height="37"/>
+  <rect class="cls-3" x="35" y="0.13" width="7" height="37"/>
+</svg>

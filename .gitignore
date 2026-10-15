@@ -1,0 +1,29 @@
+.DS_Store
+._*
+node_modules/
+node_modules.npm5-backup/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+**/*.log
+
+# SVN 元数据（本项目由 SVN 管理，Git 侧不追踪）
+.svn/
+
+# 打包产物
+layout-design.zip
+
+test/unit/coverage
+test/e2e/reports
+selenium-debug.log
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+package-lock.json
