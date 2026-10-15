@@ -4,7 +4,7 @@
     <header class="nav">
       <div class="nav__logo">
         <svg-icon icon-class="design" className="i-24 i-teal"/>
-        <span>CSOT-Tools</span>
+        <span>Layout-Design</span>
       </div>
       <button class="nav__cta" @click="goDesign">
         进入 Layout 设计
@@ -174,7 +174,7 @@
     </section>
 
     <footer class="foot">
-      <span>CSOT-Tools · 产线设计与仿真工具集</span>
+      <span>Layout-Design · 产线设计与仿真工具集</span>
       <span class="foot__sep">|</span>
       <span>当前版本聚焦 Layout 布局设计器</span>
     </footer>

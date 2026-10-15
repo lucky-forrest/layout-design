@@ -58,14 +58,13 @@ module.exports = {
         loader: 'babel-loader?cacheDirectory',
         include: [
           resolve('src'),
-          resolve('test'),
           resolve('node_modules/webpack-dev-server/client')
         ]
       },
       {
         test: /\.svg$/,
         loader: 'svg-sprite-loader',
-        include: [resolve('src/icons')],
+        include: [resolve('src/assets/icons')],
         options: {
           symbolId: 'icon-[name]'
         }
@@ -73,7 +72,7 @@ module.exports = {
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
         loader: 'url-loader',
-        exclude: [resolve('src/icons')],
+        exclude: [resolve('src/assets/icons')],
         options: {
           limit: 10,
           // name: utils.assetsPath('img/[name].[hash:7].[ext]')
@@ -100,13 +99,7 @@ module.exports = {
     ]
   },
   plugins: [
-    new VueLoaderPlugin(),
-    new webpack.ProvidePlugin({
-      $: 'jquery',
-      jQuery: 'jquery',
-      jquery: 'jquery',
-      'window.jQuery': 'jquery'
-    })
+    new VueLoaderPlugin()
   ],
   node: {
     // prevent webpack from injecting useless setImmediate polyfill because Vue

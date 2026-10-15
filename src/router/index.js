@@ -30,9 +30,7 @@ export const constantRouterMap = [
   { path: '*', redirect: '/404', hidden: true }
 ]
 
-// 历史模块路由已移除。保留空导出以兼容旧引用（usergroup/authority 等废弃页面），不再使用
-export const asyncRouterMap = []
-
+// 历史模块路由已移除。精简模式下不再存在异步路由
 export default new Router({
   scrollBehavior: () => ({ y: 0 }),
   routes: constantRouterMap
