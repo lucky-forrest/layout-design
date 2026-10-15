@@ -59,3 +59,142 @@ export function getComputedProp(prop, element, parent) {
     )
   }
 }
+
+/**
+ * 解析节点某个尺寸/坐标属性的数值。
+ * 支持数字、'120px'、'100%' 三种写法（'%' 依据父级尺寸换算），'auto' 一律按 0 处理。
+ *
+ * @param {*} value : 待解析的属性值
+ * @param {number} parentSize : 父级对应方向的尺寸，用于换算百分比
+ * @return {number}
+ */
+export function parseNumericProp(value, parentSize) {
+  if (typeof value === 'number') return value
+  if (typeof value !== 'string') return 0
+  if (value.indexOf('%') !== -1) {
+    return Math.round((Number(parentSize) || 0) * parseFloat(value) / 100) || 0
+  }
+  const parsed = parseFloat(value)
+  return isNaN(parsed) ? 0 : parsed
+}
+
+/**
+ * 取得节点在页面坐标系中的实际尺寸。
+ * 已渲染的节点优先读取 DOM 布局尺寸（不受画布缩放影响），
+ * 未渲染（如刚拖出、尚未挂载）时退回按属性换算。
+ *
+ * @param {object} node : 页面或元件节点
+ * @param {?{width: number, height: number}} parentSize : 父级尺寸，用于换算百分比
+ * @return {{width: number, height: number}}
+ */
+export function getNodeBoxSize(node, parentSize) {
+  if (!node) return { width: 0, height: 0 }
+  const dom = document.getElementById(node.id)
+  if (dom && dom.offsetWidth) {
+    return { width: dom.offsetWidth, height: dom.offsetHeight }
+  }
+  const available = parentSize || { width: 1200, height: 800 }
+  return {
+    width: parseNumericProp(node.width, available.width),
+    height: parseNumericProp(node.height, available.height)
+  }
+}
+
+/**
+ * 取得元件（含任意层级父级偏移）在页面坐标系中的盒子。
+ * 元件的 DOM 节点由 MrEl 包装层包裹，逐级向上累加包装层的位置即可还原绝对位置。
+ *
+ * @param {string} elementId : 元件 id
+ * @return {?{left: number, top: number, width: number, height: number}}
+ */
+export function getAbsoluteBox(elementId) {
+  const node = document.getElementById(elementId)
+  if (!node) return null
+
+  let left = 0
+  let top = 0
+  let current = node.parentNode
+  let depth = 0
+
+  // 中间层级（容器内容节点等）都落在其父级原点上，只有 MrEl 包装层贡献位移
+  while (current && current !== document.body && depth < 40) {
+    if (current.dataset && current.dataset.mrEl) {
+      const style = window.getComputedStyle(current)
+      left += parseFloat(style.left) || 0
+      top += parseFloat(style.top) || 0
+    }
+    current = current.parentNode
+    depth++
+  }
+
+  return {
+    left,
+    top,
+    width: node.offsetWidth,
+    height: node.offsetHeight
+  }
+}
+
+const SLOT_STEP = 20
+const SLOT_GAP = 8
+
+/**
+ * 为「点击新增」的元件寻找一个不与已有元件重叠的落点。
+ * 以期望中心点为起点，按距离由近到远扫描页面网格，
+ * 取第一个空闲格子；页面已排满时退回中心点，由调用方做边界收敛。
+ *
+ * @param {object} element : 待放置的元件（读其 width/height）
+ * @param {object} page : 目标页面（读其尺寸与已有 children）
+ * @param {?{left: number, top: number}} anchor : 期望的元件中心点（页面坐标系）
+ * @return {{left: number, top: number, free: boolean}} : free 为 false 表示页面已无空位，退回中心点
+ */
+export function findFreeSlot(element, page, anchor) {
+  const pageSize = getNodeBoxSize(page)
+  const elementWidth = parseNumericProp(element.width, pageSize.width)
+  const elementHeight = parseNumericProp(element.height, pageSize.height)
+
+  const occupied = (page.children || []).map(child => {
+    const childSize = getNodeBoxSize(child, pageSize)
+    const left = parseNumericProp(child.left, pageSize.width)
+    const top = parseNumericProp(child.top, pageSize.height)
+    return {
+      left,
+      top,
+      right: left + childSize.width,
+      bottom: top + childSize.height
+    }
+  })
+
+  const isOverlap = (left, top) => occupied.some(item =>
+    left < item.right + SLOT_GAP &&
+    left + elementWidth + SLOT_GAP > item.left &&
+    top < item.bottom + SLOT_GAP &&
+    top + elementHeight + SLOT_GAP > item.top
+  )
+
+  const maxLeft = Math.max(0, pageSize.width - elementWidth)
+  const maxTop = Math.max(0, pageSize.height - elementHeight)
+  const startLeft = Math.min(maxLeft, Math.max(0, Math.round(
+    (anchor && anchor.left ? anchor.left : elementWidth / 2 + SLOT_GAP) - elementWidth / 2
+  )))
+  const startTop = Math.min(maxTop, Math.max(0, Math.round(
+    (anchor && anchor.top ? anchor.top : elementHeight / 2 + SLOT_GAP) - elementHeight / 2
+  )))
+
+  const candidates = []
+  for (let top = 0; top <= maxTop; top += SLOT_STEP) {
+    for (let left = 0; left <= maxLeft; left += SLOT_STEP) {
+      candidates.push({
+        left,
+        top,
+        distance: Math.abs(left - startLeft) + Math.abs(top - startTop)
+      })
+    }
+  }
+  candidates.sort((a, b) => a.distance - b.distance)
+
+  const slot = candidates.find(item => !isOverlap(item.left, item.top))
+  return slot
+    ? { left: slot.left, top: slot.top, free: true }
+    : { left: startLeft, top: startTop, free: false }
+}

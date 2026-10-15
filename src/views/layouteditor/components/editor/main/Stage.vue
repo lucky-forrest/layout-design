@@ -11,27 +11,44 @@
     @resizestop="resizeStopHandler"
     @selectstop="selectStopHandler"
     @clearselection="clearSelectionHandler"
+    @escape="escapeHandler"
     @delete="deleteHandler"
     @copy="copyHandler"
     @cut="cutHandler"
     @paste="pasteHandler"
     @drop="dropHandler"
+    @dblclick.native="dblclickHandler"
     @undo="$root.$emit('undo')"
     @redo="$root.$emit('redo')"
   >
+    <img
+      v-if="pageBackground"
+      :src="pageBackground.src"
+      :style="backgroundStyle"
+      :class="{ 'stage-bg': true }"
+      data-stage-bg="true"
+      alt="">
     <stage-el v-for="element in page.children" :key="element.id" :elem="element" />
+    <link-layer :page="page" :zoom="zoom"/>
   </mr-container>
 </template>
 
 <script>
 import cloneDeep from 'clone-deep'
 import elementsFromPoint from '@/polyfills/elementsFromPoint'
-import { getComputedProp, fixElementToParentBounds } from '@/helpers/positionDimension'
+import {
+  getComputedProp,
+  fixElementToParentBounds,
+  getAbsoluteBox
+} from '@/helpers/positionDimension'
+import { getChildNode } from '@/helpers/recursiveMethods'
+import { snapToGrid } from '@/helpers/grid'
 
 import { mapState, mapActions, mapMutations } from 'vuex'
 import {
   _clearSelectedElements,
   _addSelectedElements,
+  _setEditorScope,
   registerElement,
   removeElement,
   resizeElement,
@@ -39,8 +56,10 @@ import {
   rebaseSelectedElements
 } from '@/store/types'
 
+import notify from '@/views/layouteditor/components/mixins/notify'
 import MrContainer from '@/views/layouteditor/components/editor/common/mr-vue/MrContainer'
 import StageEl from './StageEl'
+import LinkLayer from './LinkLayer'
 
 const DROP_BORDER = {
   width: '2px',
@@ -50,7 +69,8 @@ const DROP_BORDER = {
 
 export default {
   name: 'Stage',
-  components: { StageEl, MrContainer },
+  components: { StageEl, MrContainer, LinkLayer },
+  mixins: [notify],
   /* eslint-disable */
   props: ['page', 'zoom'],
   data: function() {
@@ -65,9 +85,35 @@ export default {
     }
   },
   computed: {
+    /** 网格背景：小格 = 步长、大格 = 5 倍步长 */
+    gridStyles() {
+      if (!this.grid || !this.grid.visible) return {}
+
+      const step = this.grid.size
+      const major = step * 5
+      const minorLine = 'rgba(43, 106, 115, .08) 1px, transparent 1px'
+      const majorLine = 'rgba(43, 106, 115, .20) 1px, transparent 1px'
+
+      return {
+        backgroundImage: [
+          'linear-gradient(to right, ' + majorLine + ')',
+          'linear-gradient(to bottom, ' + majorLine + ')',
+          'linear-gradient(to right, ' + minorLine + ')',
+          'linear-gradient(to bottom, ' + minorLine + ')'
+        ].join(','),
+        backgroundSize: [
+          major + 'px ' + major + 'px',
+          major + 'px ' + major + 'px',
+          step + 'px ' + step + 'px',
+          step + 'px ' + step + 'px'
+        ].join(',')
+      }
+    },
+
     pageStyles() {
       return {
         ...this.page.styles,
+        ...this.gridStyles,
         height:
           typeof this.page.height === 'string'
             ? this.page.height
@@ -80,8 +126,40 @@ export default {
       }
     },
 
+    /** 当前编辑层级：进入了容器就作用于容器，否则作用于页面 */
+    scopeNode() {
+      if (!this.editorScopeId) return this.page
+      return getChildNode(this.page, this.editorScopeId) || this.page
+    },
+
+    /** 底图：始终固定在元件之下，不参与点选与拖动 */
+    pageBackground() {
+      const bg = this.page.attrs && this.page.attrs.background
+      return bg && bg.src ? bg : null
+    },
+
+    backgroundStyle() {
+      const bg = this.pageBackground
+      if (!bg) return {}
+
+      return {
+        position: 'absolute',
+        left: (Number(bg.x) || 0) + 'px',
+        top: (Number(bg.y) || 0) + 'px',
+        width: (Number(bg.width) || 0) + 'px',
+        height: 'auto',
+        opacity: typeof bg.opacity === 'number' ? bg.opacity : 1,
+        transform: 'rotate(' + (Number(bg.rotate) || 0) + 'deg)',
+        transformOrigin: 'top left',
+        pointerEvents: 'none',
+        userSelect: 'none'
+      }
+    },
+
     ...mapState({
+      editorScopeId: state => state.layoutEditor.editorScopeId,
       selectedElements: state => state.layoutEditor.selectedElements || [],
+      grid: state => state.layoutEditor.grid,
       projectComponents: state => state.layoutEditor.project.components
     })
   },
@@ -90,18 +168,46 @@ export default {
       if (this.selectedElements.length > 0) this._clearSelectedElements()
     },
 
-    deleteHandler() {
+    /** Esc：先清空选中，已在容器内时再退回上一层 */
+    escapeHandler() {
       if (this.selectedElements.length > 0) {
-        this.selectedElements.map(el =>
-          this.removeElement({ page: this.page, elId: el.id })
-        )
+        this._clearSelectedElements()
+      } else if (this.editorScopeId) {
+        this._setEditorScope(null)
       }
+    },
+
+    /** 双击容器：进入该容器层级，方便选中与框选内部元件 */
+    dblclickHandler(e) {
+      const containerDom = e.target.closest
+        ? e.target.closest('[data-can-contain="true"]')
+        : null
+      if (!containerDom || !containerDom.id) return
+      if (containerDom.id === this.editorScopeId) return
+
+      const node = getChildNode(this.page, containerDom.id)
+      if (!node) return
+
+      this._setEditorScope(node.id)
+      this._clearSelectedElements()
+      this._addSelectedElements([node])
+    },
+
+    deleteHandler() {
+      const count = this.selectedElements.length
+      if (count === 0) return
+
+      this.selectedElements.map(el =>
+        this.removeElement({ page: this.page, elId: el.id })
+      )
+      this.notifySuccess('已删除 ' + count + ' 个元件，可用 Ctrl+Z 撤销')
     },
 
     copyHandler() {
       if (this.selectedElements.length > 0) {
         this.clipboard = []
         this.selectedElements.map(el => this.clipboard.push(cloneDeep(el)))
+        this.notifyInfo('已复制 ' + this.clipboard.length + ' 个元件')
       }
     },
 
@@ -112,6 +218,7 @@ export default {
           this.clipboard.push(cloneDeep(el))
           this.removeElement({ page: this.page, elId: el.id })
         })
+        this.notifyInfo('已剪切 ' + this.clipboard.length + ' 个元件，可用 Ctrl+V 粘贴')
       }
     },
 
@@ -120,25 +227,40 @@ export default {
         this.clipboard.map(el => {
           this.registerElement({ pageId: this.page.id, el, global: el.global })
         })
+        this.notifySuccess('已粘贴 ' + this.clipboard.length + ' 个元件')
       }
     },
 
     dropHandler(e) {
-      const mainContainer = document.getElementById('main')
       let element = JSON.parse(e.dataTransfer.getData('text/plain'))
 
       const height = getComputedProp('height', element, this.page)
       const width = getComputedProp('width', element, this.page)
-      // let top = e.pageY + mainContainer.scrollTop - mainContainer.offsetTop - this.$el.offsetTop - height / 2
-      // let left = e.pageX + mainContainer.scrollLeft - mainContainer.offsetLeft - this.$el.offsetLeft - width / 2
-      let top = this.$el.offsetTop
-      let left =this.$el.offsetLeft
 
-      // Correct drop positions based on the editorZoom
-      top = Math.round(top / this.zoom)
-      left = Math.round(left / this.zoom)
+      // 以鼠标在画布中的实际落点为基准：
+      // 扣掉画布自身偏移与边框，再换算回未缩放的页面坐标，最后按元件中心对齐
+      const stageRect = this.$el.getBoundingClientRect()
+      const stageStyle = window.getComputedStyle(this.$el)
+      const borderLeft = parseFloat(stageStyle.borderLeftWidth) || 0
+      const borderTop = parseFloat(stageStyle.borderTopWidth) || 0
 
-      const fixedElement = fixElementToParentBounds( { top, left, height, width }, this.page )
+      const top = Math.round(
+        (e.clientY - stageRect.top) / this.zoom - borderTop - height / 2
+      )
+      const left = Math.round(
+        (e.clientX - stageRect.left) / this.zoom - borderLeft - width / 2
+      )
+
+      // 开了网格吸附时，落点也吸到网格线上，和拖动保持一致
+      const snapSize = this.grid && this.grid.snap ? this.grid.size : 0
+      const dropped = snapSize
+        ? { top: snapToGrid(top, snapSize), left: snapToGrid(left, snapSize) }
+        : { top, left }
+
+      const fixedElement = fixElementToParentBounds(
+        { ...dropped, height, width },
+        this.page
+      )
       element = { ...element, ...fixedElement }
 
       this.registerElement({
@@ -149,42 +271,56 @@ export default {
     },
 
     selectStopHandler(selectionBox) {
+      const scopeNode = this.scopeNode
+
       if (
         (selectionBox.top === selectionBox.bottom &&
           selectionBox.left === selectionBox.right) ||
-        this.page.children.length === 0
+        !scopeNode ||
+        scopeNode.children.length === 0
       )
         return
 
-      const selectedElements = []
-      this.page.children.forEach(childEl => {
+      const matched = []
+      scopeNode.children.forEach(childEl => {
+        // 锁定的元件不参与框选
+        if (childEl.locked) return
+
         const child = childEl.global
           ? { ...childEl, ...this.getComponentRef(childEl), id: childEl.id }
           : childEl
 
-        const childTop = getComputedProp('top', child)
-        const childLeft = getComputedProp('left', child)
-        const childBottom =
-          getComputedProp('height', child, this.page) + childTop
-        const childRight =
-          getComputedProp('width', child, this.page) + childLeft
+        // 用绝对盒子做相交判断，容器内的元件同样能框选到
+        const box = getAbsoluteBox(childEl.id)
+        if (!box) return
+
+        const childTop = box.top
+        const childLeft = box.left
+        const childBottom = box.top + box.height
+        const childRight = box.left + box.width
 
         if (
-          (childTop <= selectionBox.bottom &&
-            childLeft <= selectionBox.right &&
-            childBottom >= selectionBox.top &&
-            childRight >= selectionBox.left) ||
-          (childTop <= selectionBox.bottom &&
-            childRight >= selectionBox.left &&
-            childBottom >= selectionBox.top &&
-            childLeft <= selectionBox.right)
+          childTop <= selectionBox.bottom &&
+          childLeft <= selectionBox.right &&
+          childBottom >= selectionBox.top &&
+          childRight >= selectionBox.left
         ) {
-          selectedElements.push(child)
+          matched.push(child)
         }
       })
 
-      if (selectedElements.length > 0) {
-        this._addSelectedElements(selectedElements)
+      if (matched.length === 0) return
+
+      if (selectionBox.additive) {
+        // Shift 框选：把新框到的元件追加到已有选中里
+        const selectedIds = this.selectedElements.map(el => el.id)
+        this._addSelectedElements(
+          this.selectedElements.concat(
+            matched.filter(el => selectedIds.indexOf(el.id) === -1)
+          )
+        )
+      } else {
+        this._addSelectedElements(matched)
       }
     },
 
@@ -278,17 +414,16 @@ export default {
     },
 
     movingHandler(absMouseX, absMouseY) {
-      this.dropContainer = this.getContaineggOnPoint(absMouseX, absMouseY)
+      this.dropContainer = this.getContainerOnPoint(absMouseX, absMouseY)
       this.toggleDroppableCursor(!!this.dropContainer)
     },
 
     moveStopHandler(moveStopData) {
-      const containegg = this.getContaineggOnPoint(
+      const canContain = this.getContainerOnPoint(
         moveStopData.absMouseX,
         moveStopData.absMouseY
       )
-      console.log(moveStopData)
-      const parentId = containegg ? containegg.id : null
+      const parentId = canContain ? canContain.id : null
 
       moveStopData.moveElData.map(moveData =>
         this.moveElement({
@@ -305,10 +440,10 @@ export default {
       this.dropContainer = null
     },
 
-    getContaineggOnPoint(x, y) {
-      const movingEggs = this.selectedElements
-      const parentsIds = movingEggs.map(egg =>
-        egg.id.substring(0, egg.id.lastIndexOf('.'))
+    getContainerOnPoint(x, y) {
+      const movingElements = this.selectedElements
+      const parentsIds = movingElements.map(item =>
+        item.id.substring(0, item.id.lastIndexOf('.'))
       )
       const commonParentId = parentsIds.every((val, i, arr) => val === arr[0])
         ? parentsIds[0]
@@ -319,9 +454,9 @@ export default {
         if (el.id === commonParentId) return null
         if (
           el.dataset.mrContainer ||
-          (el.dataset.containegg &&
-            !el.dataset.componegg &&
-            movingEggs.every(egg => !el.id.includes(egg.id)))
+          (el.dataset.canContain &&
+            !el.dataset.componentType &&
+            movingElements.every(item => !el.id.includes(item.id)))
         )
           return el
       }
@@ -341,7 +476,11 @@ export default {
       resizeElement,
       moveElement
     ]),
-    ...mapMutations([_clearSelectedElements, _addSelectedElements])
+    ...mapMutations([
+      _clearSelectedElements,
+      _addSelectedElements,
+      _setEditorScope
+    ])
   },
   watch: {
     dropContainer: function(newVal, oldVal) {
@@ -385,5 +524,10 @@ html.droppable * {
     0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 1px 5px 0 rgba(0, 0, 0, 0.12),
     0 3px 1px -2px rgba(0, 0, 0, 0.2); */
+}
+
+/* 底图垫在最下层，永远不接收鼠标事件 */
+.stage-bg {
+  z-index: 0;
 }
 </style>

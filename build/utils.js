@@ -69,11 +69,19 @@ exports.cssLoaders = function(options) {
     postcss: generateLoaders(),
     less: generateLoaders('less'),
     sass: generateLoaders('sass', {
-      indentedSyntax: true,
-      includePaths: [resolve('node_modules')]
+      implementation: require('sass'),
+      webpackImporter: false,
+      sassOptions: {
+        indentedSyntax: true,
+        includePaths: [resolve('node_modules')]
+      }
     }),
     scss: generateLoaders('sass', {
-      includePaths: [resolve('node_modules')]
+      implementation: require('sass'),
+      webpackImporter: false,
+      sassOptions: {
+        includePaths: [resolve('node_modules')]
+      }
     }),
     stylus: generateLoaders('stylus'),
     styl: generateLoaders('stylus')

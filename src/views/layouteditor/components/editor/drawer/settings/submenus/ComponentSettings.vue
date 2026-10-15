@@ -1,29 +1,28 @@
 <template>
-  <menu-toggle>
-    <menu-toggle menu-header="General">
-      <dim-pos
-        :height="h"
-        :width="w"
-        :top="t"
-        :bottom="b"
-        :left="l"
-        :right="r"
-        @change="({type, value}) => emitChanges(type, value)"/>
-      <div class="menu">
+  <div>
+    <align-tools/>
+    <menu-toggle>
+      <menu-toggle menu-header="常规">
+        <dim-pos
+          :height="h"
+          :width="w"
+          :top="t"
+          :bottom="b"
+          :left="l"
+          :right="r"
+          @change="({type, value}) => emitChanges(type, value)"/>
         <slider
           :value="sty['opacity'] || 1"
-          label="Opacity"
-          icon="system/editor/opacity"
+          label="不透明度"
           min="0"
           max="1"
           @change="currentValue => onStyleChanges('opacity', currentValue)"/>
-
         <stack-order
           :z-index="z"
           @change="newValue => emitChanges('zIndex', newValue)"/>
-      </div>
+      </menu-toggle>
     </menu-toggle>
-  </menu-toggle>
+  </div>
 </template>
 
 <script>
@@ -32,10 +31,11 @@ import MenuToggle from '@/views/layouteditor/components/editor/common/MenuToggle
 import Slider from './controls/Slider'
 import StackOrder from './controls/StackOrder'
 import DimPos from './controls/DimPos'
+import AlignTools from './controls/AlignTools'
 
 export default {
   name: 'ComponentSettings',
-  components: { MenuToggle, Slider, StackOrder, DimPos },
+  components: { MenuToggle, Slider, StackOrder, DimPos, AlignTools },
   /* eslint-disable */
   props: ['height', 'width', 'top', 'left', 'bottom', 'right', 'zIndex', 'styles'],
   data: function() {
@@ -73,14 +73,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.menu{
-  width: 100%;
-  height: 100%;
-  margin: 1px;
-  margin-bottom: 10px;
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-}
-</style>

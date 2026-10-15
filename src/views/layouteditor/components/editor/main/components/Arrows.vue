@@ -11,8 +11,8 @@
           top: '50%',
           transform: `translate(-50%,-50%) rotate(${elemObj.attrs.rotate}deg)`
         }"
-        width="30px"
-        height="30px"
+        width="100%"
+        height="100%"
       />
     </el-tooltip>
   </div>

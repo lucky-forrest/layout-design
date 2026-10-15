@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layout-Design 设计器易用性优化分析</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231B2422'/%3E%3Crect x='5' y='5' width='9' height='9' fill='%232B6A73'/%3E%3Crect x='18' y='5' width='9' height='9' fill='%23C24648'/%3E%3Crect x='5' y='18' width='22' height='4' fill='%23EDF1F0'/%3E%3Crect x='5' y='25' width='14' height='2' fill='%232B6A73'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://miaoda.feishu.cn">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* ===== 令牌：配色直接取自设计器自身（--mdc-theme-primary #2b6a73、选中蓝 #03a9f4、状态红 #C24648、设备灰 #6D6D6D） ===== */
+:root{
+  --ink:#1B2422; --ink2:#4A5654; --ink3:#7C8784;
+  --paper:#EDF1F0; --panel:#FFFFFF; --rule:#D3DBD9; --rule2:#E6EBE9;
+  --steel:#2B6A73; --steel2:#1E4E56; --select:#03A9F4;
+  --p0:#C24648; --p1:#C9812F; --p2:#7A8A88;
+  --fab:#F2F6F5;
+  --sans:'Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Consolas,'Courier New',monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.75; font-weight:400;
+}
+a{color:var(--steel2)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--select);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.shell{max-width:1200px;margin:0 auto;padding:0 26px}
+
+/* ===== 标题栏（图纸标题栏语汇） ===== */
+.titleblock{
+  background:var(--ink); color:#E8EDEB;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:26px 26px, 26px 26px;
+  border-bottom:3px solid var(--steel);
+}
+.tb-grid{display:grid;grid-template-columns:minmax(0,7.5fr) minmax(0,4.5fr);gap:34px;padding:44px 26px 34px;max-width:1200px;margin:0 auto}
+.tb-kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:#8FB3B6;margin:0 0 14px}
+h1{margin:0;font-size:clamp(28px,3.9vw,46px);line-height:1.16;font-weight:900;letter-spacing:-.015em;color:#fff}
+h1 .thin{font-weight:300;color:#B9CBC9}
+.tb-lede{margin:18px 0 0;max-width:46ch;color:#C6D3D0;font-weight:300;font-size:15.5px}
+.tb-meta{border-left:1px solid rgba(255,255,255,.16);padding-left:26px;display:grid;gap:0}
+.tb-meta dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px}
+.tb-meta dt{font-family:var(--mono);color:#8FB3B6;white-space:nowrap}
+.tb-meta dd{margin:0;color:#DCE5E3}
+
+/* ===== 关键数字条 ===== */
+.figures{background:var(--panel);border-bottom:1px solid var(--rule)}
+.fig-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;max-width:1200px;margin:0 auto}
+.fig{padding:22px 26px;border-right:1px solid var(--rule2)}
+.fig:last-child{border-right:0}
+.fig b{display:block;font-family:var(--mono);font-weight:600;font-size:clamp(22px,2.5vw,30px);line-height:1.1;letter-spacing:-.02em}
+.fig span{display:block;margin-top:7px;font-size:12.5px;color:var(--ink3);line-height:1.5}
+.fig.accent b{color:var(--p0)}
+
+/* ===== 主体骨架：左侧锚点栏 + 内容 ===== */
+.body-grid{display:grid;grid-template-columns:186px minmax(0,1fr);gap:44px;padding:52px 0 10px}
+.body-grid>main{min-width:0}
+.rail{position:sticky;top:22px;align-self:start;font-size:13px}
+.rail ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--rule)}
+.rail li{border-bottom:1px solid var(--rule2)}
+.rail a{display:flex;gap:9px;padding:9px 12px;color:var(--ink2);text-decoration:none;border-left:2px solid transparent;margin-left:-1px}
+.rail a:hover{color:var(--steel);border-left-color:var(--steel);background:rgba(43,106,115,.05)}
+.rail .n{font-family:var(--mono);font-size:11.5px;color:var(--ink3);padding-top:2px}
+
+section{padding:0 0 62px}
+.sec-head{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:26px}
+.sec-num{font-family:var(--mono);font-size:12px;color:var(--steel);letter-spacing:.1em}
+h2{margin:8px 0 0;font-size:clamp(21px,2.5vw,28px);font-weight:700;letter-spacing:-.01em;line-height:1.28}
+h3{margin:34px 0 12px;font-size:17px;font-weight:700;letter-spacing:-.005em}
+h3:first-of-type{margin-top:6px}
+.sub{margin:10px 0 0;color:var(--ink2);max-width:62ch;font-size:14.5px}
+p{margin:12px 0}
+.note{font-size:13px;color:var(--ink3);margin-top:12px}
+
+/* ===== 表格 ===== */
+table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px;background:var(--panel)}
+.tw{overflow-x:auto}
+caption{text-align:left;font-size:12.5px;color:var(--ink3);padding:0 0 9px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule2);vertical-align:top}
+thead th{background:var(--fab);font-weight:500;font-size:12.5px;color:var(--ink2);border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:hover{background:var(--fab)}
+td .mono,td code{font-size:12.5px;color:var(--steel2)}
+code{font-family:var(--mono);font-size:12.5px;background:var(--fab);border:1px solid var(--rule2);padding:1px 5px;border-radius:3px;word-break:break-word}
+.tag{display:inline-block;font-size:11.5px;font-weight:500;padding:1px 7px;border:1px solid;border-radius:2px;white-space:nowrap;line-height:1.6}
+.t-ok{color:var(--steel2);border-color:#9FC2C4;background:#EAF3F3}
+.t-half{color:#8A5A18;border-color:#E0BA8B;background:#FBF2E6}
+.t-none{color:var(--p0);border-color:#E2A9AA;background:#FBEDED}
+
+/* ===== 优先级标签 ===== */
+.p{display:inline-block;font-family:var(--mono);font-size:11.5px;font-weight:600;color:#fff;padding:1px 6px;border-radius:2px;line-height:1.6}
+.p0{background:var(--p0)}.p1{background:var(--p1)}.p2{background:var(--p2)}
+.legend{display:flex;flex-wrap:wrap;gap:18px;font-size:12.5px;color:var(--ink2);margin:14px 0 0}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:middle}
+
+/* ===== 四象限矩阵 ===== */
+.quad-wrap{margin-top:8px}
+.quad-axes{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--ink3);border-bottom:1px solid var(--rule);padding:0 2px 6px}
+.quad{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.cell{border:1px solid var(--rule);background:var(--panel);padding:0 0 4px;min-height:104px}
+.cell>header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rule2);background:var(--fab)}
+.cell>header b{font-size:13.5px;font-weight:700}
+.cell>header em{font-family:var(--mono);font-style:normal;font-size:11px;color:var(--ink3)}
+.cell ul{list-style:none;margin:0;padding:0}
+.cell li{padding:10px 14px;border-bottom:1px solid var(--rule2);display:grid;gap:2px}
+.cell li:last-child{border-bottom:0}
+.tname{font-weight:500;font-size:14px}
+.tstat{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.tstat b{color:var(--ink2);font-weight:600}
+.cell .empty{padding:16px 14px;color:var(--ink3);font-size:12.5px}
+
+/* ===== 图表 ===== */
+.chart{background:var(--panel);border:1px solid var(--rule);padding:18px 20px 10px;margin-top:6px}
+.chart h3{margin:0 0 2px}
+.chart .csub{font-size:12.5px;color:var(--ink3);margin:0 0 12px}
+#p0chart{width:100%;height:420px}
+.chart-fallback{display:none;font-size:13px}
+.chart-fallback table{margin-top:10px}
+
+/* ===== 清单筛选 ===== */
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin:0 0 6px;padding:14px 16px;background:var(--panel);border:1px solid var(--rule)}
+.ctl{display:grid;gap:5px}
+.ctl>span{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.06em}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:inherit;font-size:12.5px;padding:5px 12px;border:1px solid var(--rule);background:var(--panel);color:var(--ink2);border-radius:2px;cursor:pointer;min-height:34px}
+.chip:hover{border-color:var(--steel);color:var(--steel)}
+.chip[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:#fff}
+select,input[type=search]{font-family:inherit;font-size:13px;padding:6px 9px;border:1px solid var(--rule);border-radius:2px;background:var(--panel);color:var(--ink);min-height:34px}
+input[type=search]{min-width:190px}
+.btn{font-family:inherit;font-size:12.5px;padding:6px 14px;border:1px solid var(--steel);background:var(--steel);color:#fff;border-radius:2px;cursor:pointer;min-height:34px}
+.btn:hover{background:var(--steel2)}
+.btn.ghost{background:transparent;color:var(--steel)}
+.count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink3)}
+
+/* ===== 条目 ===== */
+.items{list-style:none;margin:18px 0 0;padding:0;border-top:1px solid var(--rule)}
+.item{display:grid;grid-template-columns:96px minmax(0,1fr);gap:0;border-bottom:1px solid var(--rule2);background:var(--panel)}
+.item .gutter{padding:14px 12px;border-right:1px solid var(--rule2);display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-content:start}
+.item .iid{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+.item .body{padding:14px 18px 16px}
+.item h4{margin:0 0 8px;font-size:15px;font-weight:700;line-height:1.45}
+.item dl{margin:0;display:grid;gap:7px}
+.item dl>div{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px}
+.item dt{font-size:12px;color:var(--ink3);font-family:var(--mono);padding-top:2px}
+.item dd{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.7}
+.item dd em{font-style:normal;color:var(--p0)}
+.item .cost{font-family:var(--mono);font-size:11.5px;color:var(--ink3);line-height:1.5}
+empty-list{display:block}
+#empty{padding:34px 0;color:var(--ink3);font-size:14px;display:none}
+
+/* ===== 时间轴 ===== */
+.timeline{margin-top:8px}
+.tl-row{display:grid;grid-template-columns:132px 34px minmax(0,1fr);align-items:stretch}
+.tl-when{font-family:var(--mono);font-size:12.5px;color:var(--ink2);text-align:right;padding-top:16px;padding-right:4px}
+.tl-axis{position:relative;justify-self:stretch;display:flex;justify-content:center;align-items:flex-start;padding-top:18px}
+.tl-axis::before{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--rule);left:50%;margin-left:-1px}
+.tl-row:first-child .tl-axis::before{top:26px}
+.tl-row:last-child .tl-axis::before{bottom:auto;height:26px}
+.tl-dot{position:relative;z-index:1;width:13px;height:13px;border-radius:50%;border:2px solid var(--panel);margin-top:2px}
+.tl-body{background:var(--panel);border:1px solid var(--rule);padding:14px 18px 16px;margin:10px 0 18px}
+.tl-body h4{margin:0 0 6px;font-size:15.5px;font-weight:700}
+.tl-body p{margin:0 0 10px;font-size:13.5px;color:var(--ink2)}
+.tl-stats{display:flex;flex-wrap:wrap;gap:8px 20px;font-family:var(--mono);font-size:11.5px;color:var(--ink3);border-top:1px dashed var(--rule);padding-top:10px}
+.tl-stats b{color:var(--steel2);font-weight:600}
+
+/* ===== 页脚 ===== */
+footer{background:var(--ink);color:#AEC0BE;border-top:3px solid var(--steel);padding:34px 0 44px;font-size:13px}
+footer h3{margin:0 0 10px;color:#fff;font-size:14px}
+footer ul{margin:0;padding-left:18px}
+footer li{margin:5px 0}
+footer .shell{max-width:1148px}
+
+/* ===== 响应式 ===== */
+@media (max-width:1080px){
+  .tb-grid{grid-template-columns:1fr;gap:24px;padding:34px 26px 26px}
+  .tb-meta{border-left:0;padding-left:0;border-top:1px solid rgba(255,255,255,.16);padding-top:18px}
+  .fig-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fig{border-bottom:1px solid var(--rule2)}
+  .fig:nth-child(2n){border-right:0}
+  .body-grid{grid-template-columns:minmax(0,1fr);gap:26px;padding-top:34px}
+  .rail{position:static}
+  .rail ol{display:flex;overflow-x:auto;border-left:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  .rail li{border-bottom:0;border-right:1px solid var(--rule2);flex:0 0 auto}
+  .rail a{border-left:0;border-bottom:2px solid transparent;margin:0;white-space:nowrap}
+  .rail a:hover{border-bottom-color:var(--steel)}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px}
+  .tb-grid{padding:28px 16px 22px}
+  .tb-kicker{font-size:13px}
+  .tb-lede{font-size:15px}
+  .fig span{font-size:13.5px}
+  .fig b{font-size:26px}
+  .rail a{font-size:15px;padding:12px 12px}
+  .rail .n{font-size:12.5px}
+  .quad{grid-template-columns:1fr}
+  .item{grid-template-columns:1fr}
+  .item .gutter{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;border-right:0;border-bottom:1px solid var(--rule2);padding:11px 14px}
+  .item .cost{font-size:12.5px}
+  .chart{padding:16px 14px 6px}
+  #p0chart{height:400px}
+  .tag{white-space:normal;font-size:12.5px}
+  .p{font-size:12.5px}
+  .iid{font-size:12.5px}
+  .tw{-webkit-overflow-scrolling:touch}
+  .tw table{min-width:660px;font-size:14px}
+  .cap-table colgroup col:nth-child(2){width:15%!important}
+  .item dd{font-size:14.5px}
+  .chip,.btn,select,input[type=search]{min-height:44px}
+  .chip{padding:8px 14px;font-size:13.5px}
+  .tl-row{grid-template-columns:26px minmax(0,1fr)}
+  .tl-when{grid-column:2;text-align:left;padding:12px 0 0}
+  .tl-axis{grid-column:1;grid-row:span 2}
+  .tl-body{grid-column:2}
+  .tl-stats{font-size:12.5px}
+  .count{margin-left:0;width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ================= 标题栏 ================= -->
+<header class="titleblock">
+  <div class="tb-grid">
+    <div>
+      <p class="tb-kicker">LAYOUT-DESIGN · 产线布局设计器 · 易用性评审</p>
+      <h1>这个设计器还能做<br><span class="thin">哪些易用性优化</span></h1>
+      <p class="tb-lede">结论先给：功能骨架是齐的，问题在于“半成品感”——有 5 处核心编辑动作存在实质缺陷，3 项已写好的能力没有 UI 入口或只做了一半，而所有操作都没有任何反馈。下面 47 项按“值不值得做”排好序。</p>
+    </div>
+    <div class="tb-meta">
+      <dl>
+        <dt>分析对象</dt><dd>src/ 全量（layouteditor / store / assets·design）</dd>
+        <dt>技术栈</dt><dd>Vue 2.5.17 · Vuex 3 · Element UI 2.x · webpack 4</dd>
+        <dt>代码基线</dt><dd>179ae0b（主干，含未提交改动）</dd>
+        <dt>分析日期</dt><dd>2026-10-15</dd>
+        <dt>口径</dt><dd>价值与工期为本报告的评估值，工期按单人·人日估，非承诺</dd>
+      </dl>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 关键数字 ================= -->
+<div class="figures">
+  <div class="fig-grid">
+    <div class="fig"><b>47</b><span>项优化点<br>覆盖 6 个主题</span></div>
+    <div class="fig accent"><b>10</b><span>项必修（P0）<br>阻断或半成品能力</span></div>
+    <div class="fig"><b>10.5</b><span>人日清掉全部 P0<br>≈ 单人两周</span></div>
+    <div class="fig accent"><b>5</b><span>处功能缺陷<br>已定位到具体代码</span></div>
+    <div class="fig"><b>79.2</b><span>人日全部落地<br>P1 32 · P2 36.7</span></div>
+  </div>
+</div>
+
+<div class="shell">
+<div class="body-grid">
+
+  <!-- ================= 锚点栏 ================= -->
+  <nav class="rail" aria-label="章节导航">
+    <ol>
+      <li><a href="#s1"><span class="n">01</span><span>现状盘点</span></a></li>
+      <li><a href="#s2"><span class="n">02</span><span>先做哪些</span></a></li>
+      <li><a href="#s3"><span class="n">03</span><span>问题清单 47 项</span></a></li>
+      <li><a href="#s4"><span class="n">04</span><span>落地路线图</span></a></li>
+      <li><a href="#s5"><span class="n">05</span><span>代码位置索引</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- ===== 01 现状盘点 ===== -->
+    <section id="s1">
+      <div class="sec-head">
+        <div class="sec-num">01 / 现状盘点</div>
+        <h2>能用的都已经能用了，缺的是“顺”和“闭环”</h2>
+        <p class="sub">逐项读代码后，把现有能力按“可用 / 半成品 / 缺失”过了一遍。最值得注意的是：<strong>半成品占了整整 8 项</strong>——代码在、逻辑在，就是没接到界面上，或者只做了一半。</p>
+      </div>
+
+      <div class="tw">
+      <table class="cap-table">
+        <caption>表 1 · 能力矩阵：20 项交互能力的状态与代码证据</caption>
+        <colgroup>
+          <col style="width:20%"><col style="width:9%"><col style="width:43%"><col style="width:28%">
+        </colgroup>
+        <thead>
+          <tr><th>能力</th><th>状态</th><th>实际情况</th><th>代码位置</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>拖入元件建布局</td><td><span class="tag t-half">半成品</span></td><td>拖拽和点击都能新增元件，但落点固定在画布左上角，与鼠标位置无关</td><td><code>main/Stage.vue · dropHandler</code></td></tr>
+          <tr><td>移动 / 缩放元件</td><td><span class="tag t-ok">可用</span></td><td>8 个方向把手 + 拖拽移动，带父容器边界约束</td><td><code>mr-vue/MrContainer.vue</code></td></tr>
+          <tr><td>多选</td><td><span class="tag t-half">半成品</span></td><td>框选可用（仅一级子元素）；Shift 点选分支不可达</td><td><code>MrEl.vue · StageEl.vue</code></td></tr>
+          <tr><td>复制 / 粘贴 / 删除</td><td><span class="tag t-ok">可用</span></td><td>内置剪贴板；粘贴会与原元件完全重叠</td><td><code>Stage.vue · 67–124 行</code></td></tr>
+          <tr><td>撤销 / 重做</td><td><span class="tag t-ok">可用</span></td><td>全量状态快照，上限 250 步；属性输入按字符记步</td><td><code>mixins/redoundo.js</code></td></tr>
+          <tr><td>属性面板</td><td><span class="tag t-ok">可用</span></td><td>位置 / 尺寸 / 层级 / 透明度 / 边框 / 裁剪路径 / 图片 / 旋转</td><td><code>settings/submenus/ElementSettings.vue</code></td></tr>
+          <tr><td>元件库</td><td><span class="tag t-half">半成品</span></td><td>16 个元件平铺在一个“基础”分组里，无分类、无搜索、无最近使用（首页却写着“按类别组织”）</td><td><code>drawer/ElementsMenu.vue</code></td></tr>
+          <tr><td>多页面</td><td><span class="tag t-none">入口缺失</span></td><td>数据结构、新建/复制/删除 action、页面对话框全都写好了，但没有任何地方打开它</td><td><code>dialogs/PageDialog.vue</code></td></tr>
+          <tr><td>路径规划</td><td><span class="tag t-half">半成品</span></td><td>在网格上点出带序号的圆点；“清除”实为删最后一个点，点不能拖动，未保存即丢，撤销后不重绘</td><td><code>main/components/PathSetting.vue</code></td></tr>
+          <tr><td>设备连线</td><td><span class="tag t-none">缺失</span></td><td>LinkSignal 只是一个静态箭头图标，两个设备之间没有真实连接关系</td><td><code>main/components/Arrows.vue</code></td></tr>
+          <tr><td>状态色 / 实时数据</td><td><span class="tag t-half">半成品</span></td><td>可从 window.config 选绑定键（如 currentStatus），但渲染时颜色写死，无从校验绑定对不对</td><td><code>Equipment.vue · Port.vue · static/config.js</code></td></tr>
+          <tr><td>比例 / 尺寸标注</td><td><span class="tag t-none">缺失</span></td><td>只有像素级宽高，没有单位、比例尺、尺寸线，无法与现场实际尺寸对照</td><td><code>PageSettings.vue</code></td></tr>
+          <tr><td>底图导入</td><td><span class="tag t-none">缺失</span></td><td>不能导入 CAD 转出的平面图作对照描图</td><td>—</td></tr>
+          <tr><td>锁定 / 隐藏</td><td><span class="tag t-none">缺失</span></td><td>BasicElements 里声明了 attrs.hidden，渲染层从未消费；也没有锁定开关</td><td><code>assets/design/BasicElements.js</code></td></tr>
+          <tr><td>图层 / 编组</td><td><span class="tag t-none">缺失</span></td><td>层级只能一层层 ±1 调整，没有大纲树，也不能编组</td><td><code>controls/StackOrder.vue</code></td></tr>
+          <tr><td>保存 / 加载</td><td><span class="tag t-half">半成品</span></td><td>每次改动自动写浏览器单槽位；没有保存按钮、没有已保存/未保存提示（hasChanges 算了但没展示）</td><td><code>ActionBar.vue · layoutEditor.js</code></td></tr>
+          <tr><td>导出</td><td><span class="tag t-half">半成品</span></td><td>只有 .gg（Base64）格式；没有图片、PDF、设备清单导出</td><td><code>layoutEditor.js · downloadProject</code></td></tr>
+          <tr><td>服务端 / 下游集成</td><td><span class="tag t-none">缺失</span></td><td>config.js 里的 serverIp / serverPort / socketPort 全项目零引用</td><td><code>static/config.js</code></td></tr>
+          <tr><td>操作反馈</td><td><span class="tag t-none">缺失</span></td><td>&lt;mdc-snackbar&gt; 已引入但从未触发，保存、导出、删除、失败全程静默</td><td><code>Editor.vue 第 14 行</code></td></tr>
+          <tr><td>快捷键</td><td><span class="tag t-half">半成品</span></td><td>撤销/删除/复制/方向键都有，但要先点一下画布才生效；也没有 Ctrl+S、Ctrl+A、滚轮缩放</td><td><code>MrContainer.vue · keydown 监听</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <p class="note">读法：<span class="tag t-ok">可用</span> 表示逻辑完整、路径可达；<span class="tag t-half">半成品</span> 表示代码在但入口缺失、只做了一半或行为与预期不符；<span class="tag t-none">缺失</span> 表示尚无对应实现。</p>
+    </section>
+
+    <!-- ===== 02 先做哪些 ===== -->
+    <section id="s2">
+      <div class="sec-head">
+        <div class="sec-num">02 / 先做哪些</div>
+        <h2>把 47 项按主题归拢，方向就出来了</h2>
+        <p class="sub">横轴是该主题的合计工期，纵轴是它对“用户能不能顺畅干完活”的价值（1–10 分评估值）。阈值取 13 人日 / 6.5 分。每个主题卡片里都带真实数字，位置可以自己复核。</p>
+      </div>
+
+      <div class="quad-wrap">
+        <div class="quad-axes"><span>← 投入小</span><span>投入大 →</span></div>
+        <div class="quad">
+
+          <div class="cell">
+            <header><b>优先动手</b><em>价值高 · 投入可控</em></header>
+            <ul>
+              <li>
+                <span class="tname">B · 摆放与排版</span>
+                <span class="tstat"><b>11.0</b> 人日 / 价值 <b>7.1</b> / <b>9</b> 项（P0 3 · P1 4 · P2 2）</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="cell">
+            <header><b>排期立项</b><em>价值高 · 投入大</em></header>
+            <ul>
+              <li>
+                <span class="tname">D · 业务表达</span>
+                <span class="tstat"><b>21.5</b> 人日 / 价值 <b>7.6</b> / <b>7</b> 项（P0 1 · P1 5 · P2 1）</span>
+              </li>
+            </ul>
+            <p class="empty">价值最高的一个主题，也是唯一真正决定“这工具像不像专业产线设计软件”的地方——多页面、连线、状态预览、比例、底图都在这里。</p>
+          </div>
+
+          <div class="cell">
+            <header><b>顺手清掉</b><em>价值中 · 投入小</em></header>
+            <ul>
+              <li>
+                <span class="tname">F · 反馈与稳健</span>
+                <span class="tstat"><b>9.5</b> 人日 / 价值 <b>5.9</b> / <b>7</b> 项（P0 2 · P2 5）</span>
+              </li>
+              <li>
+                <span class="tname">A · 起步与元件库</span>
+                <span class="tstat"><b>10.5</b> 人日 / 价值 <b>6.0</b> / <b>5</b> 项（P1 1 · P2 4）</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="cell">
+            <header><b>暂缓 / 合并处理</b><em>价值中 · 投入大</em></header>
+            <ul>
+              <li>
+                <span class="tname">C · 选择与属性</span>
+                <span class="tstat"><b>13.5</b> 人日 / 价值 <b>6.2</b> / <b>11</b> 项（P0 3 · P1 1 · P2 7）</span>
+              </li>
+              <li>
+                <span class="tname">E · 数据与交付</span>
+                <span class="tstat"><b>13.2</b> 人日 / 价值 <b>5.8</b> / <b>8</b> 项（P0 1 · P1 2 · P2 5）</span>
+              </li>
+            </ul>
+            <p class="empty">这两个主题被“主题聚合”平均掉了：C 里有 3 项 P0（Shift 多选、框选范围、撤销粒度）、E 里有 1 项 P0（保存状态），它们必须马上做。看单项优先级请直接看第 03 节清单。</p>
+          </div>
+
+        </div>
+      </div>
+
+      <h3>10 项 P0 一共只要 10.5 人日，而且没有一项是“大工程”</h3>
+      <div class="chart">
+        <h3 style="margin-bottom:2px;font-size:15px">P0 必修项的工期分布</h3>
+        <p class="csub">横轴为单人·人日（从 0 起），按工期降序；合计 10.5 人日。</p>
+        <div id="p0chart" role="img" aria-label="P0 十项优化点的工期条形图，最长的一项是页面管理入口 2 人日，合计 10.5 人日"></div>
+        <div class="chart-fallback" id="p0fallback">
+          <table>
+            <colgroup><col style="width:56%"><col style="width:22%"><col style="width:22%"></colgroup>
+            <thead><tr><th>P0 项</th><th>编号</th><th>人日</th></tr></thead>
+            <tbody>
+              <tr><td>页面管理入口缺失</td><td class="mono">07</td><td class="mono">2.0</td></tr>
+              <tr><td>框选与父级选择受限</td><td class="mono">05</td><td class="mono">1.5</td></tr>
+              <tr><td>工程文件读取无容错</td><td class="mono">10</td><td class="mono">1.5</td></tr>
+              <tr><td>缩放与适应画布</td><td class="mono">03</td><td class="mono">1.0</td></tr>
+              <tr><td>撤销粒度按字符</td><td class="mono">06</td><td class="mono">1.0</td></tr>
+              <tr><td>无保存按钮与保存状态</td><td class="mono">08</td><td class="mono">1.0</td></tr>
+              <tr><td>操作无任何反馈</td><td class="mono">09</td><td class="mono">1.0</td></tr>
+              <tr><td>拖拽落点不跟随鼠标</td><td class="mono">01</td><td class="mono">0.5</td></tr>
+              <tr><td>新增元件堆叠在左上角</td><td class="mono">02</td><td class="mono">0.5</td></tr>
+              <tr><td>Shift 多选失效</td><td class="mono">04</td><td class="mono">0.5</td></tr>
+              <tr><td><strong>合计</strong></td><td class="mono">—</td><td class="mono"><strong>10.5</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="note">为什么 P0 这么便宜：其中 3 项是明确的代码缺陷（改十几行）、3 项是把已有能力接到界面上、4 项是补齐反馈与校验。真正贵的是 P1 的“画得准”（网格吸附、标尺、比例尺）和“能交付”（导出、清单），那部分是下一阶段的事。</p>
+    </section>
+
+    <!-- ===== 03 问题清单 ===== -->
+    <section id="s3">
+      <div class="sec-head">
+        <div class="sec-num">03 / 问题清单</div>
+        <h2>47 项，逐条带现象、建议和代码位置</h2>
+        <p class="sub">按优先级排序（P0 → P2）。每条都写清了“现在是什么行为、建议怎么改、代码在哪一行附近”，可以直接当 issue 用。评估值中“价值”为 1–10，“人日”为单人投入估算。</p>
+      </div>
+
+      <div class="controls">
+        <div class="ctl">
+          <span>优先级</span>
+          <div class="chips" id="pfilters">
+            <button class="chip" type="button" aria-pressed="true" data-p="all">全部 47</button>
+            <button class="chip" type="button" aria-pressed="false" data-p="0">P0 · 10</button>
+            <button class="chip" type="button" aria-pressed="false" data-p="1">P1 · 13</button>
+            <button class="chip" type="button" aria-pressed="false" data-p="2">P2 · 24</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <span>主题</span>
+          <select id="tfilter">
+            <option value="all">全部主题</option>
+            <option value="A">A · 起步与元件库</option>
+            <option value="B">B · 摆放与排版</option>
+            <option value="C">C · 选择与属性</option>
+            <option value="D">D · 业务表达</option>
+            <option value="E">E · 数据与交付</option>
+            <option value="F">F · 反馈与稳健</option>
+          </select>
+        </div>
+        <div class="ctl">
+          <span>搜索</span>
+          <input type="search" id="q" placeholder="如：拖拽、撤销、导出" aria-label="搜索优化点">
+        </div>
+        <button class="btn ghost" type="button" id="export-md">导出为 Markdown</button>
+        <span class="count" id="count">显示 47 / 47</span>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:#C24648"></i>P0 必修：能力不可达或明确缺陷</span>
+        <span><i style="background:#C9812F"></i>P1 核心体验：决定好不好用</span>
+        <span><i style="background:#7A8A88"></i>P2 打磨与平台化</span>
+      </div>
+
+      <ul class="items" id="list">
+        <li class="item" data-p="0" data-t="B">
+          <div class="gutter">
+            <span class="iid">01</span><span class="p p0">P0</span>
+            <span class="cost">价值 9 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>拖拽落点不跟随鼠标，拖到画布任何位置都落在左上角</h4>
+            <dl>
+              <div><dt>现象</dt><dd>拖入时落点是用 <code>this.$el.offsetTop / offsetLeft</code>（画布自身偏移）算的，鼠标坐标那两行被注释掉了——所以元件永远出现在页面左上角，用户得拖两次。</dd></div>
+              <div><dt>建议</dt><dd>改用 <code>e.pageX / pageY</code> 扣掉滚动与容器偏移、除以 zoom 后再做边界修正；拖动过程中同步高亮预计落点。</dd></div>
+              <div><dt>位置</dt><dd><code>main/Stage.vue · dropHandler</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="B">
+          <div class="gutter">
+            <span class="iid">02</span><span class="p p0">P0</span>
+            <span class="cost">价值 8 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>点击新增的元件会完全叠在一起</h4>
+            <dl>
+              <div><dt>现象</dt><dd>点击元件库新增时初始位置固定为 <code>top:0 / left:0</code>，没有偏移也没有避让——连点同一个元件，它们一个个摞在同一位置，看上去像"没加上"。</dd></div>
+              <div><dt>建议</dt><dd>新增时按网格步长找第一个空位，或放到当前视口中心并轻微错位；连续新增同一元件自动向右下错开。</dd></div>
+              <div><dt>位置</dt><dd><code>drawer/ElementsMenu.vue · initItem / addItemToStage</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="B">
+          <div class="gutter">
+            <span class="iid">03</span><span class="p p0">P0</span>
+            <span class="cost">价值 7 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>缩放没有"适应画布"，而且窗口一变用户设好的缩放就被覆盖</h4>
+            <dl>
+              <div><dt>现象</dt><dd>缩放只有 ±10% 两个按钮，没有"适应画布 / 回到 100% / 缩放到选中"；同时 resize mixin 在挂载、切页、窗口 resize 时都会把 zoom 直接重算成自适配值——手动调好的缩放在改窗口大小后丢失，重算结果还可能突破 ZoomMenu 的 0.5–2.5 上下限。</dd></div>
+              <div><dt>建议</dt><dd>补上"适应画布 / 100% / 缩放到选中"三个入口；只在用户未手动设过缩放时才自动适配；对 zoom 统一做上下限收敛。</dd></div>
+              <div><dt>位置</dt><dd><code>common/ZoomMenu.vue</code>、<code>mixins/resize.js</code>、<code>main/index.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="C">
+          <div class="gutter">
+            <span class="iid">04</span><span class="p p0">P0</span>
+            <span class="cost">价值 8 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>Shift 点选实际不生效，多选只剩框选一条路（建议实测复核）</h4>
+            <dl>
+              <div><dt>现象</dt><dd>MrEl 只注册了 <code>@mousedown.exact</code> 和 <code>.meta / .ctrl</code>：<code>.exact</code> 在按住任何修饰键时都不触发，于是 StageEl 里处理 <code>shiftKey</code> 的分支永远走不到。</dd></div>
+              <div><dt>建议</dt><dd>补一个 <code>@mousedown.shift</code>，或改到容器层统一判断 <code>e.shiftKey</code>；顺手支持 Ctrl/⌘ 点选做减选。</dd></div>
+              <div><dt>位置</dt><dd><code>mr-vue/MrEl.vue（activated 事件注册处）</code>、<code>main/StageEl.vue · activatedHandler</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="C">
+          <div class="gutter">
+            <span class="iid">05</span><span class="p p0">P0</span>
+            <span class="cost">价值 8 · 1.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>框选只能选到一级子元素，也选不中父级</h4>
+            <dl>
+              <div><dt>现象</dt><dd>框选只遍历 <code>page.children</code>，设备/容器/数据组内部的子元件选不到；点空白处的 selectParent 是空实现（只打印日志）——嵌套布局里想整体挪一个容器，只能在画布上精准点到它的边缘。</dd></div>
+              <div><dt>建议</dt><dd>框选递归遍历子节点；增加面包屑（页面 › 设备 › Unit），双击进入容器、Esc 退回父级。</dd></div>
+              <div><dt>位置</dt><dd><code>main/Stage.vue · selectStopHandler</code>、<code>main/index.vue · selectParent</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="C">
+          <div class="gutter">
+            <span class="iid">06</span><span class="p p0">P0</span>
+            <span class="cost">价值 7 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>撤销粒度细到"每敲一个字符"</h4>
+            <dl>
+              <div><dt>现象</dt><dd>主键、别名这类输入用 <code>@keyup</code> 触发更新，而撤销栈对每次 mutation 都存一份全量快照——改一个设备名，要按十几次撤销才退得回去。</dd></div>
+              <div><dt>建议</dt><dd>输入类改动做防抖（≥400ms）或失焦提交，并把同一字段的连续修改合并成一步历史。</dd></div>
+              <div><dt>位置</dt><dd><code>submenus/ElementSettings.vue（主键/别名）</code>、<code>mixins/redoundo.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="D">
+          <div class="gutter">
+            <span class="iid">07</span><span class="p p0">P0</span>
+            <span class="cost">价值 9 · 2.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>多页面功能全都写好了，但界面上没有任何入口</h4>
+            <dl>
+              <div><dt>现象</dt><dd>页面的新建/重命名/复制/删除 action、页面对话框、页面状态读写都已实现，但全项目没有任何一处以"打开"状态触发展示它；抽屉只保留了"元素 / 设置"两个页签，数据里的 <code>showPages</code> 恒为 false 且模板中没有对应内容——README 写的"支持多页面"实际不可达。</dd></div>
+              <div><dt>建议</dt><dd>恢复抽屉的"页面"页签：页面列表 + 新建/重命名/复制/删除/切换，并支持拖拽排序与页面缩略图。</dd></div>
+              <div><dt>位置</dt><dd><code>dialogs/PageDialog.vue</code>、<code>drawer/index.vue</code>、<code>layoutEditor.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="E">
+          <div class="gutter">
+            <span class="iid">08</span><span class="p p0">P0</span>
+            <span class="cost">价值 8 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>没有保存按钮，也看不出到底存没存</h4>
+            <dl>
+              <div><dt>现象</dt><dd>保存靠每次改动自动写浏览器 localforage，但工具栏只有撤销/重做/清空/打开/下载；状态里的 <code>hasChanges</code> 计算了却从未展示——用户无从判断"我这活儿安全了没有"。</dd></div>
+              <div><dt>建议</dt><dd>加保存按钮 + 状态文案（"已自动保存 10:23" / "有未保存改动"）；离开页面或打开其他工程前做未保存提醒。</dd></div>
+              <div><dt>位置</dt><dd><code>header/ActionBar.vue</code>、<code>store/modules/layoutEditor.js · checkLastSaved</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="F">
+          <div class="gutter">
+            <span class="iid">09</span><span class="p p0">P0</span>
+            <span class="cost">价值 7 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>所有操作都没有反馈，静默得像卡住了</h4>
+            <dl>
+              <div><dt>现象</dt><dd>Editor.vue 里引了 <code>&lt;mdc-snackbar&gt;</code>，但整个项目从未触发过它——保存、导出、加载、删除，成功或失败界面上都不说一句话。</dd></div>
+              <div><dt>建议</dt><dd>统一一处 toast：已保存、已导出、已删除 N 个元件、加载失败及原因；失败提示必须说清原因和下一步怎么做。</dd></div>
+              <div><dt>位置</dt><dd><code>components/Editor.vue（第 14 行）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="0" data-t="F">
+          <div class="gutter">
+            <span class="iid">10</span><span class="p p0">P0</span>
+            <span class="cost">价值 8 · 1.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>打开损坏或不兼容的工程文件会直接抛异常</h4>
+            <dl>
+              <div><dt>现象</dt><dd>加载时直接 <code>JSON.parse(unescape(decodeURIComponent(atob(...))))</code>，没有 try/catch，也没有格式版本号与迁移——文件被改坏、被截断或来自旧版本时，用户只看到界面没反应（错误只进控制台）。</dd></div>
+              <div><dt>建议</dt><dd>解析包 try/catch + 结构校验（pages / children 是否存在）；工程文件写入 version 并做向下迁移；失败时给出可读提示。</dd></div>
+              <div><dt>位置</dt><dd><code>store/modules/layoutEditor.js · loadProject</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="B">
+          <div class="gutter">
+            <span class="iid">11</span><span class="p p1">P1</span>
+            <span class="cost">价值 9 · 3.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>没有网格吸附和对齐参考线，全靠肉眼摆</h4>
+            <dl>
+              <div><dt>现象</dt><dd>代码里找不到任何网格、吸附、参考线逻辑。一台上料机旁边并排 20 个 Unit，只能靠反复拖动和手填坐标去凑齐。</dd></div>
+              <div><dt>建议</dt><dd>可开关的网格吸附（步长可设，如 10 / 50px）；拖动时显示与相邻元件的中心线、边缘对齐虚线；按住 Alt 临时关掉吸附。</dd></div>
+              <div><dt>位置</dt><dd><code>mr-vue/MrContainer.vue（移动与缩放算法）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="B">
+          <div class="gutter">
+            <span class="iid">12</span><span class="p p1">P1</span>
+            <span class="cost">价值 8 · 2.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>拖拽和缩放时看不到坐标与尺寸</h4>
+            <dl>
+              <div><dt>现象</dt><dd>移动元件时界面不给 X/Y/W/H 数值，只能停下后去右侧面板读；画布没有标尺，也没有与相邻元件的间距提示。</dd></div>
+              <div><dt>建议</dt><dd>画布边缘加标尺并高亮当前选区范围；拖动时跟随一个浮层显示 X / Y / 宽 / 高，多选时显示选区外框尺寸。</dd></div>
+              <div><dt>位置</dt><dd><code>main/Stage.vue</code>、<code>mr-vue/MrContainer.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="B">
+          <div class="gutter">
+            <span class="iid">13</span><span class="p p1">P1</span>
+            <span class="cost">价值 8 · 1.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>多选之后没有对齐与分布工具</h4>
+            <dl>
+              <div><dt>现象</dt><dd>选中多个元件后只能改坐标、透明度、层级，没有左/右/上/下对齐、水平垂直居中、等距分布、统一宽高这类排版动作。</dd></div>
+              <div><dt>建议</dt><dd>在属性面板顶部加一行对齐按钮（6 个对齐 + 2 个分布 + 统一尺寸），并配快捷键；对齐基准可选"选区"或"画布"。</dd></div>
+              <div><dt>位置</dt><dd><code>settings/submenus/ComponentSettings.vue（multiple 分支）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="B">
+          <div class="gutter">
+            <span class="iid">14</span><span class="p p1">P1</span>
+            <span class="cost">价值 7 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>元件不能锁定，也不能隐藏</h4>
+            <dl>
+              <div><dt>现象</dt><dd>BasicElements 里给设备 / Port / Unit 声明了 <code>attrs.hidden</code>，但渲染层从未消费它；也没有锁定概念——好不容易摆好的设备很容易被误拖、误删。</dd></div>
+              <div><dt>建议</dt><dd>补锁定（不可选中/不可拖动，可临时解锁）与隐藏（仅编辑态隐藏，导出仍在），支持多选批量锁定。</dd></div>
+              <div><dt>位置</dt><dd><code>assets/design/BasicElements.js</code>、<code>main/StageEl.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="C">
+          <div class="gutter">
+            <span class="iid">15</span><span class="p p1">P1</span>
+            <span class="cost">价值 9 · 3.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>没有图层/大纲树，嵌套结构里根本找不到元件</h4>
+            <dl>
+              <div><dt>现象</dt><dd>层级只能靠 StackOrder 一层层 ±1 调；容器套容器之后，想选中里面某个 Unit 只能在画布上凭眼力点，元件重叠时几乎无解。</dd></div>
+              <div><dt>建议</dt><dd>加图层树：页面 › 容器 › 子元件逐级展开，点选即定位（高亮 + 滚动到可视区），支持拖拽调序、显隐、锁定、重命名、按主键搜索。</dd></div>
+              <div><dt>位置</dt><dd><code>drawer/index.vue（新增页签）</code>、<code>main/Stage.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="A">
+          <div class="gutter">
+            <span class="iid">16</span><span class="p p1">P1</span>
+            <span class="cost">价值 7 · 1.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>元件库只有一个分组，没有搜索，也没有最近使用</h4>
+            <dl>
+              <div><dt>现象</dt><dd>16 个元件全部平铺在一个"基础"分组里。首页宣称"内置 16 种产线布局元件，按类别组织"，实际没有分类；元件只会越加越多，找起来会越来越慢。</dd></div>
+              <div><dt>建议</dt><dd>按设备 / 载具 / 容器 / 文字与标签 / 工具分类，加搜索框与"最近使用"，支持收藏常用元件。</dd></div>
+              <div><dt>位置</dt><dd><code>drawer/ElementsMenu.vue</code>、<code>assets/design/BasicElements.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="D">
+          <div class="gutter">
+            <span class="iid">17</span><span class="p p1">P1</span>
+            <span class="cost">价值 8 · 4.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>路径规划交互粗糙，还带着几个坑</h4>
+            <dl>
+              <div><dt>现象</dt><dd>按钮组第一个按钮是空的（死按钮）；"清除"实际只是删掉最后一个点；点不能拖动、不能单独删除、只有点没有连线；不点"保存"就丢；点只在组件 mounted 时绘制一次，<em>撤销/重做后画布上的点不会跟着变</em>，界面与实际数据不一致。</dd></div>
+              <div><dt>建议</dt><dd>重做这个交互：点可拖动/可删除、相邻点自动连线、撤销上一步、索引自动重排、数据与画布双向同步（watch attrs 重绘）、有未保存提示。</dd></div>
+              <div><dt>位置</dt><dd><code>main/components/PathSetting.vue</code>、<code>main/components/point.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="D">
+          <div class="gutter">
+            <span class="iid">18</span><span class="p p1">P1</span>
+            <span class="cost">价值 8 · 4.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>LinkSignal 只是个静态图标，没有真正的连线能力</h4>
+            <dl>
+              <div><dt>现象</dt><dd>设备之间的"信号连线"目前是一个静态箭头 SVG，放上去不产生任何连接关系，也表达不了"A 设备连 B 设备"；首页却把它描述成"表达设备联动关系"。</dd></div>
+              <div><dt>建议</dt><dd>提供连线工具：从某个 Port/Unit 拖到目标元件生成连线，支持方向、折线路由、选中删除、端口吸附；连线关系可导出成关系表，作为 CIM/PLC 配置的输入。</dd></div>
+              <div><dt>位置</dt><dd><code>main/components/Arrows.vue</code>、<code>main/components/Port.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="D">
+          <div class="gutter">
+            <span class="iid">19</span><span class="p p1">P1</span>
+            <span class="cost">价值 7 · 2.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>状态色绑定选得了，但看不到任何效果</h4>
+            <dl>
+              <div><dt>现象</dt><dd>属性面板能从 window.config 选 bgColor / borderColor 的绑定键（如 currentStatus、alive），但渲染时颜色是写死的（设备固定 <code>#6D6D6D</code>，Port/Unit/炉子固定 <code>#C24648</code>），绑定键不参与着色，也没有预览——用户无法判断绑定有没有配错。</dd></div>
+              <div><dt>建议</dt><dd>先做"模拟状态预览"：按绑定键切换正常 / 报警 / 离线几套配色并在画布上直接预览；后续再接 socket 做实时刷新。</dd></div>
+              <div><dt>位置</dt><dd><code>main/components/Equipment.vue、Port.vue、Unit.vue、Oven.vue</code>、<code>static/config.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="D">
+          <div class="gutter">
+            <span class="iid">20</span><span class="p p1">P1</span>
+            <span class="cost">价值 8 · 3.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>没有比例和单位，画出来的图跟现场对不上</h4>
+            <dl>
+              <div><dt>现象</dt><dd>页面只有像素宽高，没有"1px 等于多少毫米"的概念，没有尺寸标注线也没有比例尺；设备实际长宽只能自己反推。</dd></div>
+              <div><dt>建议</dt><dd>支持设置整页实际总长/总宽（mm）并据此换算比例尺，元件可按实际尺寸录入；提供两点间尺寸标注与比例尺图例，导出时可带标注。</dd></div>
+              <div><dt>位置</dt><dd><code>settings/submenus/PageSettings.vue</code>、<code>assets/design/BasicElements.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="D">
+          <div class="gutter">
+            <span class="iid">21</span><span class="p p1">P1</span>
+            <span class="cost">价值 7 · 3.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>不能导入底图，没法照着现场平面图描</h4>
+            <dl>
+              <div><dt>现象</dt><dd>没有底图功能，CAD 导出的平面图只能另开窗口对照着一点点摆，位置很难对。</dd></div>
+              <div><dt>建议</dt><dd>支持导入图片（或 PDF 转 PNG）作为底图，可设透明度、缩放、位置与旋转，并可锁定；底图与元件分层，导出时可选是否包含底图。</dd></div>
+              <div><dt>位置</dt><dd><code>settings/submenus/PageSettings.vue（新增分组）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="E">
+          <div class="gutter">
+            <span class="iid">22</span><span class="p p1">P1</span>
+            <span class="cost">价值 8 · 2.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>交付不出图：只能给一个 .gg 文件</h4>
+            <dl>
+              <div><dt>现象</dt><dd>导出只有 .gg（Base64）一种格式，评审、培训、发群里都拿不到一张能看的图。首页讲的应用场景"布局预演与评审""培训与演示"恰恰缺这一环。</dd></div>
+              <div><dt>建议</dt><dd>一键导出当前页/整线为 PNG（可选倍率、是否带网格与标注），再做一个适合打印的 PDF 视图（含标题栏、比例尺、元件清单）。</dd></div>
+              <div><dt>位置</dt><dd><code>store/modules/layoutEditor.js · downloadProject</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="1" data-t="E">
+          <div class="gutter">
+            <span class="iid">23</span><span class="p p1">P1</span>
+            <span class="cost">价值 7 · 1.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>导不出设备清单，下游系统拿不到数据</h4>
+            <dl>
+              <div><dt>现象</dt><dd>布局图里其实已经有主键、类型、别名、坐标、绑定键这些信息，但没有导出通道——而 CIM/PLC 要的正是这份位号与坐标表。</dd></div>
+              <div><dt>建议</dt><dd>导出 CSV/Excel：主键、元件类型、别名、X/Y/宽/高、所属页面、绑定键，坐标按设定比例换算成毫米；支持只导出当前选中范围。</dd></div>
+              <div><dt>位置</dt><dd><code>store/modules/layoutEditor.js（新增 action）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+        <li class="item" data-p="2" data-t="C">
+          <div class="gutter">
+            <span class="iid">24</span><span class="p p2">P2</span>
+            <span class="cost">价值 4 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>复制粘贴会原位重叠，看着像没反应</h4>
+            <dl>
+              <div><dt>现象</dt><dd>粘贴直接复用原件的 left/top，副本与原件完全重合，视觉上"什么都没发生"。</dd></div>
+              <div><dt>建议</dt><dd>粘贴时偏移一个固定步长（如 +10 / +10）并随次数递增；连同偏移一起合并成一步可撤销的操作。</dd></div>
+              <div><dt>位置</dt><dd><code>main/Stage.vue · pasteHandler</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="C">
+          <div class="gutter">
+            <span class="iid">25</span><span class="p p2">P2</span>
+            <span class="cost">价值 6 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>多选后能改的属性太少</h4>
+            <dl>
+              <div><dt>现象</dt><dd>多选走的是 ComponentSettings，只有位置/尺寸/不透明度/层级，颜色、边框、旋转、文字都改不了——"这一排设备统一换成报警色"只能逐个点。</dd></div>
+              <div><dt>建议</dt><dd>多选时开放颜色、边框、透明度、旋转、字体等可批量应用的属性，面板顶部写明"共 N 项"，并标注哪些属性值不一致。</dd></div>
+              <div><dt>位置</dt><dd><code>settings/submenus/ComponentSettings.vue</code>、<code>settings/SettingsMenu.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="C">
+          <div class="gutter">
+            <span class="iid">26</span><span class="p p2">P2</span>
+            <span class="cost">价值 5 · 1.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>位置尺寸只能手输，没有步进、没有方向键微调</h4>
+            <dl>
+              <div><dt>现象</dt><dd>位置/尺寸是纯文本框，没有步进器、不能拖拽输入、不能方向键微调；"auto"与具体数值靠一个没有标签的小复选框切换，语义不清，很容易点错。</dd></div>
+              <div><dt>建议</dt><dd>换成"数值 + 单位(px/%) + 步进"的输入组件，支持拖拽改值；把 auto 开关做成带文字的"自适应 / 固定"切换。</dd></div>
+              <div><dt>位置</dt><dd><code>settings/submenus/controls/DimPos.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="C">
+          <div class="gutter">
+            <span class="iid">27</span><span class="p p2">P2</span>
+            <span class="cost">价值 6 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>关键字段没有校验</h4>
+            <dl>
+              <div><dt>现象</dt><dd>主键可以为空、可以重复；行/列可以输入非数字，而载板、花篮、数据组、路径规划都直接拿 parseInt 结果参与计算——输入非法值会变成 NaN 个格子，用户不知道错在哪。</dd></div>
+              <div><dt>建议</dt><dd>主键做非空 + 唯一性校验并提示重名（可提供 EQP-01 这类自动编号）；行/列做正整数与范围校验，非法值即时提示而不是静默失效。</dd></div>
+              <div><dt>位置</dt><dd><code>ElementSettings.vue</code>、<code>Carrier.vue</code>、<code>Basket.vue</code>、<code>DataItem.vue</code>、<code>PathSetting.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="C">
+          <div class="gutter">
+            <span class="iid">28</span><span class="p p2">P2</span>
+            <span class="cost">价值 4 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>属性面板不跟随选择自动展开</h4>
+            <dl>
+              <div><dt>现象</dt><dd>面板默认全部折叠，切换选中对象时也不滚动、不展开——选中一个设备后想改图片或裁剪路径，得自己在长长一串分组里翻。</dd></div>
+              <div><dt>建议</dt><dd>按元件类型自动展开最相关的分组，切换选择时把面板滚回顶部，并记住上次的展开状态。</dd></div>
+              <div><dt>位置</dt><dd><code>submenus/ElementSettings.vue</code>、<code>common/MenuToggle.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="C">
+          <div class="gutter">
+            <span class="iid">29</span><span class="p p2">P2</span>
+            <span class="cost">价值 6 · 2.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>不能编组，也没有右键菜单</h4>
+            <dl>
+              <div><dt>现象</dt><dd>复制、删除、置顶、锁定这些高频动作只能靠键盘或去面板找；画布上没有右键菜单；也没有把多个元件编成一个整体的能力（比如一台上料机 + 它的两个 Unit）。</dd></div>
+              <div><dt>建议</dt><dd>画布右键菜单（复制/粘贴/删除/置顶/置底/锁定/对齐/编组）+ 编组能力（组内整体移动缩放，双击进入组）。</dd></div>
+              <div><dt>位置</dt><dd><code>main/Stage.vue</code>、<code>mr-vue/MrContainer.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="C">
+          <div class="gutter">
+            <span class="iid">30</span><span class="p p2">P2</span>
+            <span class="cost">价值 5 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>撤销栈上限 250，而且撤销会把选中态一起回滚</h4>
+            <dl>
+              <div><dt>现象</dt><dd>每次撤销都是整体状态替换，当前选中对象和缩放比例也一起回到从前；大布局下每步都存全量快照，250 步对长时间编辑也不够用。</dd></div>
+              <div><dt>建议</dt><dd>历史改增量记录；撤销只回滚数据层，保留当前选中与缩放；另外把"回到上次保存点"做成一个独立动作。</dd></div>
+              <div><dt>位置</dt><dd><code>mixins/redoundo.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="B">
+          <div class="gutter">
+            <span class="iid">31</span><span class="p p2">P2</span>
+            <span class="cost">价值 4 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>没有空格拖拽平移，滚轮也不能缩放</h4>
+            <dl>
+              <div><dt>现象</dt><dd>画布只能靠滚动条平移（适应画布之后想微调视野很别扭），滚轮只用来滚页面，不能缩放。</dd></div>
+              <div><dt>建议</dt><dd>空格 + 拖拽平移视图；Ctrl/⌘ + 滚轮以指针为中心缩放；双击空白回到 100%。</dd></div>
+              <div><dt>位置</dt><dd><code>main/index.vue</code>、<code>main/Stage.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="B">
+          <div class="gutter">
+            <span class="iid">32</span><span class="p p2">P2</span>
+            <span class="cost">价值 4 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>拖拽元件没有预览和落点提示</h4>
+            <dl>
+              <div><dt>现象</dt><dd>从元件库拖出时没有跟随鼠标的预览，只有进入可放置容器时才有红色高亮边框；落点整体缺反馈。</dd></div>
+              <div><dt>建议</dt><dd>拖拽时显示半透明元件预览；进入可放置容器时高亮该容器并提示"将放入 XX"。</dd></div>
+              <div><dt>位置</dt><dd><code>drawer/ElementsMenu.vue</code>、<code>main/Stage.vue · dropContainer（watch）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="A">
+          <div class="gutter">
+            <span class="iid">33</span><span class="p p2">P2</span>
+            <span class="cost">价值 4 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>元件命名中英混排，术语不统一</h4>
+            <dl>
+              <div><dt>现象</dt><dd>元件库里 Button / Text / Image / Port / Unit / VCR / LinkSignal / CarrierBoard / DataItem 与中文名混在一起；默认主键也很随意（设备默认是"L"，容器是"Line"）。</dd></div>
+              <div><dt>建议</dt><dd>统一以中文名为准（英文名放副标题），主键默认值规范化（EQP / PORT / UNIT…），并在帮助里配一份术语表。</dd></div>
+              <div><dt>位置</dt><dd><code>assets/design/BasicElements.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="A">
+          <div class="gutter">
+            <span class="iid">34</span><span class="p p2">P2</span>
+            <span class="cost">价值 5 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>空画布没有引导，也没有模板</h4>
+            <dl>
+              <div><dt>现象</dt><dd>第一次进入就是一张空白页面，没有"从左侧拖入元件"的提示，也没有示例；新用户不知道从哪开始。而任何一次改动都会立刻覆盖本地存档——新手容易把默认工程弄乱。</dd></div>
+              <div><dt>建议</dt><dd>空态给一行操作提示 + "载入示例布局"入口；再提供几个常用模板（整线、单元机组），新建工程时可选。</dd></div>
+              <div><dt>位置</dt><dd><code>main/components/Stage.vue</code>、<code>views/layouteditor/index.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="A">
+          <div class="gutter">
+            <span class="iid">35</span><span class="p p2">P2</span>
+            <span class="cost">价值 8 · 5.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>元件库不可配置，加一种设备就要改代码发版</h4>
+            <dl>
+              <div><dt>现象</dt><dd>新增一个元件要动四五处：把 svg 放进 <code>assets/design/svgs/equipment</code>、跑 <code>npm run svg</code> 编译图标、在 BasicElements.js 注册、在 components/index.js 注册组件、再构建发布。现场最朴素的诉求"上传一张设备图就能用"完全没有。</dd></div>
+              <div><dt>建议</dt><dd>把元件库改为配置驱动（名称、图标、默认尺寸、属性表单都由配置描述），支持后台上传自定义图片元件、前端运行时加载——设备型号迭代不再需要前端发版。</dd></div>
+              <div><dt>位置</dt><dd><code>assets/design/BasicElements.js</code>、<code>main/components/index.js</code>、<code>package.json（svg 脚本）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="A">
+          <div class="gutter">
+            <span class="iid">36</span><span class="p p2">P2</span>
+            <span class="cost">价值 6 · 3.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>元件不参数化，同型号不同尺寸只能手改宽高</h4>
+            <dl>
+              <div><dt>现象</dt><dd>只有载板/花篮/数据组支持行列参数，方向只有左右两档；同型号不同长度的输送线要手动改尺寸。数据组的格子内容还写死成"col1 col1 col1…"，炉子的温度文案被注释掉了。</dd></div>
+              <div><dt>建议</dt><dd>把常用元件做成参数化（行列数、方向、编号规则、占位文本），并支持"型号库"——同一类设备预存几种常见尺寸，拖进来直接选。</dd></div>
+              <div><dt>位置</dt><dd><code>main/components/Carrier.vue、Car.vue、DataItem.vue、Oven.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="D">
+          <div class="gutter">
+            <span class="iid">37</span><span class="p p2">P2</span>
+            <span class="cost">价值 6 · 3.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>没有区域划分、注释和图例</h4>
+            <dl>
+              <div><dt>现象</dt><dd>洁净区、黄光区、缓存区这类区域只能拿一个容器方块硬凑，没有半透明区域、没有引线注释、没有图例——评审时说不清"哪块是哪块"。</dd></div>
+              <div><dt>建议</dt><dd>加区域工具（框选成区域，填色 + 名称，半透明且不遮挡元件）、注释与引线标注、图例组件；导出时可选是否带区域层。</dd></div>
+              <div><dt>位置</dt><dd><code>main/components/（新增区域元件）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="E">
+          <div class="gutter">
+            <span class="iid">38</span><span class="p p2">P2</span>
+            <span class="cost">价值 9 · 5.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>只有一个本地槽位，打开文件会直接覆盖当前工程</h4>
+            <dl>
+              <div><dt>现象</dt><dd>工程存在浏览器 localforage 的单个 local-checkpoint 里：没有项目列表、没有另存为、没有历史版本；打开本地文件直接替换当前工程，且不做未保存确认——点错就没了（只能靠撤销找回一部分）。</dd></div>
+              <div><dt>建议</dt><dd>先做本地多项目列表（命名/重命名/另存为/删除/最近打开），再做服务端保存与共享；新建、打开前统一做脏数据确认。</dd></div>
+              <div><dt>位置</dt><dd><code>store/modules/layoutEditor.js · loadProject / syncLocal</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="E">
+          <div class="gutter">
+            <span class="iid">39</span><span class="p p2">P2</span>
+            <span class="cost">价值 6 · 2.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>没有只读预览和分享</h4>
+            <dl>
+              <div><dt>现象</dt><dd>要给现场、供应商、客户看图，只能把工程文件发过去让人家也装一套工具。</dd></div>
+              <div><dt>建议</dt><dd>做只读预览（支持缩放、图例、元件清单，不可编辑）并生成分享链接；后续接服务端加权限与有效期。</dd></div>
+              <div><dt>位置</dt><dd><code>router/index.js（新增只读路由）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="E">
+          <div class="gutter">
+            <span class="iid">40</span><span class="p p2">P2</span>
+            <span class="cost">价值 3 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>"打开"菜单是遗留逻辑，点到的是另一回事</h4>
+            <dl>
+              <div><dt>现象</dt><dd>工具栏"打开"按钮点下去会直接弹出系统文件选择框（设计好的下拉菜单实际不会展开），菜单里"从 GitHub 加载"的分支不可达；而 LoadDialog 依然是"从 GitHub 加载工程"——和内部工具的定位不符。</dd></div>
+              <div><dt>建议</dt><dd>把"打开"改成规划好的入口：最近打开 / 本地文件 / 服务端项目；清掉 GitHub 相关对话框与死分支。</dd></div>
+              <div><dt>位置</dt><dd><code>header/ActionBar.vue</code>、<code>dialogs/LoadDialog.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="E">
+          <div class="gutter">
+            <span class="iid">41</span><span class="p p2">P2</span>
+            <span class="cost">价值 3 · 0.5 人日</span>
+          </div>
+          <div class="body">
+            <h4>中文项目名导出后会变成一串横杠</h4>
+            <dl>
+              <div><dt>现象</dt><dd>导出文件名用 <code>replace(/[^a-zA-Z0-9-_]+/g, '-')</code> 清洗，中文标题被整段替换成"-"，导出的文件名毫无辨识度。</dd></div>
+              <div><dt>建议</dt><dd>保留中文与空格，只过滤文件系统非法字符；默认文件名带上页面名与日期。</dd></div>
+              <div><dt>位置</dt><dd><code>store/modules/layoutEditor.js · downloadProject</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="E">
+          <div class="gutter">
+            <span class="iid">42</span><span class="p p2">P2</span>
+            <span class="cost">价值 2 · 0.2 人日</span>
+          </div>
+          <div class="body">
+            <h4>导出 MIME 类型拼错</h4>
+            <dl>
+              <div><dt>现象</dt><dd><code>download(..., 'appliction/json')</code> 拼写错误（应为 application/json），部分浏览器与安全软件会因此给出怪提示。</dd></div>
+              <div><dt>建议</dt><dd>改为 application/json，并与文件扩展名保持一致。</dd></div>
+              <div><dt>位置</dt><dd><code>store/modules/layoutEditor.js · downloadProject</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="F">
+          <div class="gutter">
+            <span class="iid">43</span><span class="p p2">P2</span>
+            <span class="cost">价值 7 · 3.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>大布局会卡：每次改动都存全量快照并写本地存档</h4>
+            <dl>
+              <div><dt>现象</dt><dd>撤销栈对每次 mutation 都 <code>cloneDeep</code> 整个 store（最多 250 份），同时 checkLastSaved 会对整个工程做 JSON.stringify + Base64 再写 localforage，两条都在同一次改动的同步链路上；框选时还会对每个元件反复 getComputedStyle 读 DOM。元件一多，拖动就明显发涩。</dd></div>
+              <div><dt>建议</dt><dd>历史改增量或按操作合并；本地写入做防抖（≥500ms）并挪到空闲时段；几何计算改成读一次缓存；元素数量超阈值时做渲染简化。</dd></div>
+              <div><dt>位置</dt><dd><code>mixins/redoundo.js</code>、<code>layoutEditor.js · checkLastSaved</code>、<code>helpers/positionDimension.js</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="F">
+          <div class="gutter">
+            <span class="iid">44</span><span class="p p2">P2</span>
+            <span class="cost">价值 6 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>快捷键要先点一下画布才生效</h4>
+            <dl>
+              <div><dt>现象</dt><dd>快捷键绑在画布容器（tabindex="0"）上，靠鼠标松手时 focus 才生效——刚进页面或切换页面后，Ctrl+Z、Delete 按了没反应；也缺 Ctrl+S、Ctrl+A、Ctrl+D。</dd></div>
+              <div><dt>建议</dt><dd>改成全局 keydown 监听（在输入框内自动忽略），首次进入即生效，并补齐常用键位。</dd></div>
+              <div><dt>位置</dt><dd><code>mr-vue/MrContainer.vue（keydown 监听列表）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="F">
+          <div class="gutter">
+            <span class="iid">45</span><span class="p p2">P2</span>
+            <span class="cost">价值 6 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>破坏性操作没有二次确认</h4>
+            <dl>
+              <div><dt>现象</dt><dd>删除容器会连带删掉里面所有子元件，没有任何提示；"清空项目"的文案还写着"…虽然实际上可以撤销"，很不像正式产品该说的话。</dd></div>
+              <div><dt>建议</dt><dd>删除容器时明确提示"将同时删除其中 N 个元件"；清空项目要求二次确认；把这类文案按产品口径重写。</dd></div>
+              <div><dt>位置</dt><dd><code>main/Stage.vue · deleteHandler</code>、<code>dialogs/ConfirmDialog.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="F">
+          <div class="gutter">
+            <span class="iid">46</span><span class="p p2">P2</span>
+            <span class="cost">价值 4 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>没有帮助入口和快捷键说明</h4>
+            <dl>
+              <div><dt>现象</dt><dd>工具栏没有帮助入口，也找不到快捷键列表；新用户只能靠试错，很多已有能力（撤销、方向键微调、Shift 加选）根本没人知道。</dd></div>
+              <div><dt>建议</dt><dd>加帮助浮层：快捷键表、元件说明、常见操作动图；首次使用给一次引导提示。</dd></div>
+              <div><dt>位置</dt><dd><code>header/ActionBar.vue（新增入口）</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+        <li class="item" data-p="2" data-t="F">
+          <div class="gutter">
+            <span class="iid">47</span><span class="p p2">P2</span>
+            <span class="cost">价值 3 · 1.0 人日</span>
+          </div>
+          <div class="body">
+            <h4>无障碍与细节问题</h4>
+            <dl>
+              <div><dt>现象</dt><dd>拖拽把手只有 10px，触控板和小屏很难点中；面板缺 aria 标注与键盘焦点样式；元件库条目里有一处无效 CSS（<code>border: 1p solid red</code>，单位拼错）；画布入口还留着调试用的 console.log。</dd></div>
+              <div><dt>建议</dt><dd>把手放大到 12–14px 并增加 hover 热区；补 aria-label 与 focus-visible 样式；清理无效 CSS、遗留注释与 console.log。</dd></div>
+              <div><dt>位置</dt><dd><code>mr-vue/MrEl.vue · .handle</code>、<code>drawer/ElementsMenu.vue（.el-menu__el 样式）</code>、<code>main/index.vue</code></dd></div>
+            </dl>
+          </div>
+        </li>
+
+      </ul>
+      <p id="empty">没有匹配的条目，换个关键词试试。</p>
+    </section>
+
+    <!-- ===== 04 落地路线图 ===== -->
+    <section id="s4">
+      <div class="sec-head">
+        <div class="sec-num">04 / 落地路线图</div>
+        <h2>三个阶段，先止血，再补体验，最后平台化</h2>
+        <p class="sub">分界依据是"用户能感知到什么变化"：第一阶段之后，任何人都能顺畅画完一张图并安全存下来；第二阶段之后，图能画得准、也能交出去；第三阶段才是服务端、可配置元件库这些工程化的事。</p>
+      </div>
+
+      <div class="timeline">
+        <div class="tl-row">
+          <div class="tl-when">现在 ～ 第 2 周</div>
+          <div class="tl-axis"><span class="tl-dot" style="background:#C24648"></span></div>
+          <div class="tl-body">
+            <h4>阶段一 · 把"能用"补成"顺手"</h4>
+            <p>修 3 处明确缺陷（拖拽落点、新增堆叠、Shift 多选），把 3 项已写好的能力接到界面上（多页面、保存、缩放适配），补 4 项反馈与数据安全（toast、文件容错、撤销粒度、框选范围）。做完之后，核心编辑链路不再有"看着不对劲"的地方。</p>
+            <div class="tl-stats"><span>项数 <b>10</b></span><span>工期 <b>10.5 人日</b></span><span>价值均值 <b>7.9 / 10</b></span><span>全部为 P0</span></div>
+          </div>
+        </div>
+
+        <div class="tl-row">
+          <div class="tl-when">第 3 ～ 10 周</div>
+          <div class="tl-axis"><span class="tl-dot" style="background:#C9812F"></span></div>
+          <div class="tl-body">
+            <h4>阶段二 · 从"能画"到"画得准、交得出"</h4>
+            <p>网格吸附与标尺让摆放变准；图层树与对齐工具让大布局可维护；路径规划与设备连线从"图标"变成真能力；比例尺与底图让它能对上现场；导出图片和设备清单让它能交出去。这一阶段是产品价值的真正分水岭。</p>
+            <div class="tl-stats"><span>项数 <b>13</b></span><span>工期 <b>32 人日</b></span><span>价值均值 <b>7.8 / 10</b></span><span>全部为 P1</span></div>
+          </div>
+        </div>
+
+        <div class="tl-row">
+          <div class="tl-when">第 11 周起 · 持续</div>
+          <div class="tl-axis"><span class="tl-dot" style="background:#7A8A88"></span></div>
+          <div class="tl-body">
+            <h4>阶段三 · 从工具变成平台</h4>
+            <p>项目库与服务端保存、元件库配置化（新增设备不再需要发版）、区域与图例、大布局性能、只读分享、可访问性与文案打磨。可以按业务节奏挑着做，其中"元件库配置化"和"服务端项目库"投入最大、收益也最大。</p>
+            <div class="tl-stats"><span>项数 <b>24</b></span><span>工期 <b>36.7 人日</b></span><span>价值均值 <b>5.1 / 10</b></span><span>全部为 P2</span></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="note">如果只有一个人做：P0 两周、P1 约七周。如果有三个人并行，建议按主题切分（摆放与排版 / 业务表达 / 数据与交付），彼此耦合很小，但要注意两点：<code>MrContainer</code>（移动缩放引擎）和 <code>redoundo</code>（撤销栈）是三个主题都会碰到的公共件，最好由同一个人统一改完再分头进行。</p>
+    </section>
+
+    <!-- ===== 05 代码位置索引 ===== -->
+    <section id="s5">
+      <div class="sec-head">
+        <div class="sec-num">05 / 代码位置索引</div>
+        <h2>按文件查：改动点都在哪里</h2>
+        <p class="sub">路径均相对于仓库根目录。最后两列是对应的问题编号，可以直接反查第 03 节的详细描述。</p>
+      </div>
+
+      <div class="tw">
+      <table>
+        <caption>表 2 · 关键文件与相关优化点</caption>
+        <colgroup>
+          <col style="width:36%"><col style="width:48%"><col style="width:16%">
+        </colgroup>
+        <thead>
+          <tr><th>文件</th><th>职责 / 关键问题</th><th>相关条目</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>src/store/modules/layoutEditor.js</code></td><td>项目与页面状态机：增删改、存档触发、.gg 导入导出（无校验、单槽位、中文名被清洗）</td><td class="mono">06 08 10 22 23 38 41 42</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/main/Stage.vue</code></td><td>画布本体：拖放落点、复制粘贴删除、容器落点高亮、框选范围</td><td class="mono">01 05 24 29 32 34 45</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/common/mr-vue/MrContainer.vue</code></td><td>移动/缩放引擎、快捷键绑定（需先点画布）、缩放算法</td><td class="mono">03 11 12 29 44 47</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/common/mr-vue/MrEl.vue</code></td><td>元件包装、8 个拖拽把手（10px）、Shift 激活分支不可达</td><td class="mono">04 47</td></tr>
+          <tr><td><code>src/views/layouteditor/components/mixins/redoundo.js</code></td><td>撤销栈：每次 mutation 全量深拷贝，上限 250，整体回滚</td><td class="mono">06 30 43</td></tr>
+          <tr><td><code>src/views/layouteditor/components/mixins/resize.js</code></td><td>自动适配缩放：挂载、切页、窗口 resize 时覆盖用户缩放</td><td class="mono">03</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/header/ActionBar.vue</code></td><td>工具栏：撤销/重做/清空/打开/下载，无保存按钮；"打开"菜单为遗留逻辑</td><td class="mono">08 40 46</td></tr>
+          <tr><td><code>src/views/layouteditor/components/Editor.vue</code></td><td>编辑器外壳；引入 snackbar 但从未触发</td><td class="mono">09</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/drawer/index.vue</code></td><td>左侧抽屉：仅"元素 / 设置"两个页签，页面页签被移除</td><td class="mono">07 15 16</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/drawer/ElementsMenu.vue</code></td><td>元件库：单分组平铺、点击新增落点固定、无拖拽预览</td><td class="mono">02 16 32 47</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/drawer/settings/SettingsMenu.vue</code></td><td>属性面板路由：单元素 / 多元素 / 页面三种模式</td><td class="mono">25 28</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/drawer/settings/submenus/ElementSettings.vue</code></td><td>单元素属性表单：主键与别名按每次按键提交，无校验</td><td class="mono">06 27 28</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/drawer/settings/submenus/ComponentSettings.vue</code></td><td>多选属性：仅位置/尺寸/不透明度/层级，缺对齐与分布</td><td class="mono">13 25</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/drawer/settings/submenus/PageSettings.vue</code></td><td>页面属性：宽高（px）、背景色、透明度，无比例与底图</td><td class="mono">20 21</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/drawer/settings/submenus/controls/DimPos.vue</code></td><td>位置尺寸输入：纯文本框 + 无标签的 auto 复选框</td><td class="mono">26</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/drawer/settings/submenus/controls/StackOrder.vue</code></td><td>层级调整：只能一层层 ±1</td><td class="mono">15</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/main/index.vue</code></td><td>画布容器、选择与框选入口、缩放接线的 selectParent 空实现</td><td class="mono">03 05 12 15 31 47</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/main/StageEl.vue</code></td><td>元件渲染分发；attrs.hidden 未参与渲染</td><td class="mono">04 05 14</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/main/components/Equipment.vue</code></td><td>设备外观：背景色写死 #6D6D6D，绑定键不参与着色</td><td class="mono">19</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/main/components/Port.vue / Unit.vue / Oven.vue</code></td><td>端口、单元、炉子：状态色返回常量，炉温文案被注释</td><td class="mono">19 36</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/main/components/PathSetting.vue</code></td><td>路径规划：空按钮、清除实为撤点、点不可拖、撤销后不重绘</td><td class="mono">17 27</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/main/components/Arrows.vue</code></td><td>LinkSignal：静态箭头图标，无连接语义</td><td class="mono">18</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/main/components/Carrier.vue / Basket.vue / DataItem.vue</code></td><td>行列参数与写死的占位内容（col1 col1…）</td><td class="mono">27 36</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/common/ZoomMenu.vue</code></td><td>缩放控件：仅 ±10%，缺适应画布/100%/缩放到选中</td><td class="mono">03</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/dialogs/PageDialog.vue</code></td><td>页面对话框：逻辑完整但无任何入口打开</td><td class="mono">07</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/dialogs/LoadDialog.vue</code></td><td>"从 GitHub 加载工程"遗留对话框</td><td class="mono">40</td></tr>
+          <tr><td><code>src/views/layouteditor/components/editor/dialogs/ConfirmDialog.vue</code></td><td>清空确认与文案口径</td><td class="mono">45</td></tr>
+          <tr><td><code>src/assets/design/BasicElements.js</code></td><td>16 个元件的默认属性/尺寸/主键/图标名，加元件必须改这里</td><td class="mono">14 16 33 35 36</td></tr>
+          <tr><td><code>src/helpers/positionDimension.js</code></td><td>几何计算：框选时对每个元件多次读 DOM 计算样式</td><td class="mono">43</td></tr>
+          <tr><td><code>static/config.js</code></td><td>状态绑定键 + 服务端地址：服务端相关字段全项目零引用</td><td class="mono">19 38</td></tr>
+          <tr><td><code>src/router/index.js</code></td><td>路由：首页 / 编辑器，无只读预览路由</td><td class="mono">39</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<footer>
+  <div class="shell">
+    <h3>口径与边界</h3>
+    <ul>
+      <li><strong>评估值口径：</strong>"价值"为 1–10 的主观评估，衡量该优化对"用户能否顺畅干完活"的帮助；"人日"为单人投入估算，用于排序而非承诺工期。</li>
+      <li><strong>证据来源：</strong>逐文件阅读 <code>src/</code> 全量与 <code>static/config.js</code> 后得出，每条都标了对应代码位置。其中第 04 条（Shift 多选）为代码推断结论，已注明建议实测复核；其余各条均为代码可直接印证的现状。</li>
+      <li><strong>不在范围内：</strong>构建与部署链路、账号与权限体系、后端接口设计、首页信息架构——这些不属于"设计器易用性"。</li>
+      <li><strong>一句话总结：</strong>47 项里真正需要重新设计的不到 10 项，其余都是"把已经写好的能力接到界面上"或者"把缺的反馈补上"——这也是为什么 P0 十项加起来只要 10.5 人日。</li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  try {
+    var list = document.getElementById('list');
+    if (!list) return;
+    var items = Array.prototype.slice.call(list.querySelectorAll('.item'));
+    var chips = Array.prototype.slice.call(document.querySelectorAll('#pfilters .chip'));
+    var tfilter = document.getElementById('tfilter');
+    var q = document.getElementById('q');
+    var count = document.getElementById('count');
+    var empty = document.getElementById('empty');
+    var p = 'all';
+
+    function apply() {
+      var kw = (q && q.value ? q.value : '').trim().toLowerCase();
+      var t = tfilter ? tfilter.value : 'all';
+      var shown = 0;
+      items.forEach(function (el) {
+        var okP = (p === 'all' || el.getAttribute('data-p') === p);
+        var okT = (t === 'all' || el.getAttribute('data-t') === t);
+        var okQ = !kw || el.textContent.toLowerCase().indexOf(kw) !== -1;
+        var ok = okP && okT && okQ;
+        el.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+      });
+      if (count) count.textContent = '显示 ' + shown + ' / ' + items.length;
+      if (empty) empty.style.display = shown ? 'none' : 'block';
+    }
+
+    chips.forEach(function (c) {
+      c.addEventListener('click', function () {
+        p = c.getAttribute('data-p');
+        chips.forEach(function (o) { o.setAttribute('aria-pressed', String(o === c)); });
+        apply();
+      });
+    });
+    if (tfilter) tfilter.addEventListener('change', apply);
+    if (q) q.addEventListener('input', apply);
+
+    var btn = document.getElementById('export-md');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        var out = ['# Layout-Design 设计器易用性优化清单', '', '来源：设计器易用性优化分析（评估值口径见原报告）', ''];
+        items.forEach(function (el) {
+          if (el.style.display === 'none') return;
+          var id = el.querySelector('.iid') ? el.querySelector('.iid').textContent.trim() : '';
+          var pr = el.querySelector('.p') ? el.querySelector('.p').textContent.trim() : '';
+          var cost = el.querySelector('.cost') ? el.querySelector('.cost').textContent.trim() : '';
+          var title = el.querySelector('h4') ? el.querySelector('h4').textContent.trim() : '';
+          out.push('## ' + pr + ' · ' + id + ' ' + title);
+          out.push('- ' + cost);
+          Array.prototype.slice.call(el.querySelectorAll('dl > div')).forEach(function (row) {
+            var dt = row.querySelector('dt') ? row.querySelector('dt').textContent.trim() : '';
+            var dd = row.querySelector('dd') ? row.querySelector('dd').textContent.replace(/\s+/g, ' ').trim() : '';
+            out.push('- ' + dt + '：' + dd);
+          });
+          out.push('');
+        });
+        var blob = new Blob([out.join('\n')], { type: 'text/markdown;charset=utf-8' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '设计器易用性优化清单.md';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      });
+    }
+  } catch (e) { /* 过滤与导出失败不影响阅读 */ }
+
+  /* ===== P0 工期条形图（ECharts，失败则回退到静态表格） ===== */
+  function mountChart() {
+    var box = document.getElementById('p0chart');
+    var fb = document.getElementById('p0fallback');
+    if (!box || !fb) return;
+    if (!window.echarts) { box.style.display = 'none'; fb.style.display = 'block'; return; }
+    try {
+      var chart = window.echarts.init(box);
+      chart.setOption({
+        animationDuration: 500,
+        grid: { left: 4, right: 62, top: 8, bottom: 30, containLabel: true },
+        tooltip: { trigger: 'item', confine: true, formatter: function (o) { return o.name + '：' + o.value + ' 人日'; } },
+        xAxis: {
+          type: 'value', min: 0, max: 2.4, name: '人日', nameGap: 18,
+          nameTextStyle: { fontSize: 11, color: '#7C8784' },
+          axisLabel: { fontSize: 11, color: '#7C8784' },
+          axisLine: { lineStyle: { color: '#D3DBD9' } },
+          splitLine: { lineStyle: { color: '#E6EBE9' } }
+        },
+        yAxis: {
+          type: 'category', inverse: true,
+          data: ['07 页面管理入口', '05 框选与父级选择', '10 工程文件容错', '03 缩放与适应画布', '06 撤销粒度', '08 保存按钮与状态', '09 操作反馈', '01 拖拽落点', '02 新增堆叠避让', '04 Shift 多选'],
+          axisLabel: { fontSize: 12, color: '#4A5654' },
+          axisLine: { show: false }, axisTick: { show: false }
+        },
+        series: [{
+          type: 'bar', barWidth: '52%',
+          itemStyle: { color: '#2B6A73' },
+          label: { show: true, position: 'right', formatter: '{c} 人日', fontSize: 11, color: '#4A5654' },
+          data: [2.0, 1.5, 1.5, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 0.5]
+        }]
+      });
+      window.addEventListener('resize', function () { chart.resize(); });
+    } catch (e) {
+      box.style.display = 'none'; fb.style.display = 'block';
+    }
+  }
+
+  function loadEcharts() {
+    if (window.echarts) { mountChart(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js';
+    s.onload = mountChart;
+    s.onerror = mountChart;
+    document.head.appendChild(s);
+  }
+  loadEcharts();
+})();
+</script>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 /* eslint-disable vue/require-default-prop */
 <template>
   <div class="action-bar__wrapper">
-    <button v-tooltip.right="'zoom in'" :disabled="!canZoomIn" class="action-btn" @click="zoomIn">
+    <button v-tooltip.right="'放大'" :disabled="!canZoomIn" class="action-btn" @click="zoomIn">
       <svgicon
         :color="canZoomIn ? '#fff' : 'rgba(255,255,255,.5)'"
         icon="system/editor/zoom_in"
@@ -12,7 +12,7 @@
 
     <div class="zoom-value">{{ Math.round(zoom * 100) + '%' }}</div>
 
-    <button v-tooltip.right="'zoom out'" :disabled="!canZoomOut" class="action-btn" @click="zoomOut">
+    <button v-tooltip.right="'缩小'" :disabled="!canZoomOut" class="action-btn" @click="zoomOut">
       <svgicon
         :color="canZoomOut ? '#fff' : 'rgba(255,255,255,.5)'"
         icon="system/editor/zoom_out"
@@ -20,22 +20,49 @@
         height="24"
       />
     </button>
+
+    <div class="action-bar__divider"/>
+
+    <button
+      v-tooltip.right="'适应画布'"
+      class="action-btn action-btn--text"
+      @click="$emit('fit')">
+      适应
+    </button>
+
+    <button
+      v-tooltip.right="'实际大小 100%'"
+      class="action-btn action-btn--text"
+      @click="$emit('reset')">
+      100%
+    </button>
+
+    <button
+      v-tooltip.right="hasSelection ? '缩放到选中元件' : '先选中元件再缩放到选中'"
+      :disabled="!hasSelection"
+      class="action-btn action-btn--text"
+      @click="hasSelection && $emit('zoomToSelection')">
+      选中
+    </button>
   </div>
 </template>
 
 <script>
 import '@/assets/design/icons/system/editor/zoom_in'
 import '@/assets/design/icons/system/editor/zoom_out'
-
-const MAX_ZOOM = 2.5
-const MIN_ZOOM = 0.5
+import { MIN_ZOOM, MAX_ZOOM, ZOOM_STEP, clampZoom } from '@/helpers/zoom'
 
 export default {
   name: 'ZoomMenu',
-  /* eslint-disable */
   props: {
-    zoom: Number,
-    default: 1
+    zoom: {
+      type: Number,
+      default: 1
+    },
+    hasSelection: {
+      type: Boolean,
+      default: false
+    }
   },
   computed: {
     canZoomIn() {
@@ -47,10 +74,10 @@ export default {
   },
   methods: {
     zoomIn() {
-      this.$emit('zoomChange', Math.round((this.zoom + 0.1) * 10) / 10)
+      this.$emit('zoomChange', clampZoom(this.zoom * ZOOM_STEP))
     },
     zoomOut() {
-      this.$emit('zoomChange', Math.round((this.zoom - 0.1) * 10) / 10)
+      this.$emit('zoomChange', clampZoom(this.zoom / ZOOM_STEP))
     }
   }
 }
@@ -94,6 +121,27 @@ export default {
 }
 .action-btn * {
   vertical-align: middle;
+}
+.action-btn:disabled {
+  cursor: not-allowed;
+}
+
+.action-btn--text {
+  height: 26px;
+  margin: 3px 0;
+  font-size: 11px;
+  line-height: 24px;
+  color: #fff;
+}
+.action-btn--text:disabled {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.action-bar__divider {
+  width: 24px;
+  height: 1px;
+  margin: 6px auto;
+  background-color: rgba(255, 255, 255, 0.24);
 }
 
 .zoom-value {

@@ -2,33 +2,25 @@
   <dialog>
     <p :title="dialogTitle" class="page-dialog__title">{{ dialogTitle }}</p>
     <div class="page-dialog__content">
-      <mdc-textfield
+      <el-input
         v-model="name"
-        :helptext="nameError"
-        :class="{'mdc-text-field--invalid': nameError}"
-        label="Name"
-        minlength="1"
-        helptext-validation
-        helptext-persistent
-        required
+        :class="{'is-error': nameError}"
+        placeholder="名称"
         class="page-dialog__input"
         @input="checkName"/>
+      <p v-if="nameError" class="dialog-error">{{ nameError }}</p>
 
-      <mdc-textfield
+      <el-input
         v-model="path"
-        :helptext="pathError"
-        :class="{'mdc-text-field--invalid': pathError}"
-        label="Path"
-        minlength="1"
-        helptext-validation
-        helptext-persistent
-        required
+        :class="{'is-error': pathError}"
+        placeholder="路径"
         class="page-dialog__input"
         @input="checkPath"/>
+      <p v-if="pathError" class="dialog-error">{{ pathError }}</p>
     </div>
     <div class="page-dialog__actions">
-      <mdc-button :disabled="!valid" @click="savePageAndClose({id, name, path})">Save</mdc-button>
-      <mdc-button @click="_togglePageDialog({isOpen: false, isNew: pageDialog.isNew})">Cancel</mdc-button>
+      <el-button :disabled="!valid" type="primary" @click="savePageAndClose({id, name, path})">保存</el-button>
+      <el-button @click="_togglePageDialog({isOpen: false, isNew: pageDialog.isNew})">取消</el-button>
     </div>
   </dialog>
 </template>
@@ -52,7 +44,7 @@ export default {
   },
   computed: {
     dialogTitle() {
-      return this.pageDialog.isNew ? 'Add a new page' : 'Editing: ' + this.activePage.name
+      return this.pageDialog.isNew ? '新建页面' : '编辑：' + this.activePage.name
     },
 
     ...mapState({
@@ -86,11 +78,11 @@ export default {
       if (!this.pageDialog.isNew && (this.name === this.activePage.name)) {
         this.nameError = ''
       } else if (!this.name) {
-        this.nameError = 'Choose a name for your page'
+        this.nameError = '请为页面选择名称'
       } else if (!this.name.match(/[a-z]+/g)) {
-        this.nameError = 'At least one letter on the name'
+        this.nameError = '名称中至少包含一个字母'
       } else if (this.nameInUse(this.name)) {
-        this.nameError = 'There\'s already a page with that name'
+        this.nameError = '已存在同名页面'
       } else {
         this.nameError = ''
       }
@@ -101,13 +93,13 @@ export default {
       if (!this.pageDialog.isNew && (this.path === this.activePage.path)) {
         this.pathError = ''
       } else if (!this.path) {
-        this.pathError = 'Choose the page\'s path'
+        this.pathError = '请选择页面路径'
       } else if (this.path[0] !== '/') {
-        this.pathError = 'The path must start with /'
+        this.pathError = '路径必须以 / 开头'
       } else if (!this.path.match(/^\/([A-Za-z0-9/_-])+$/g)) {
-        this.pathError = 'Invalid path'
+        this.pathError = '路径无效'
       } else if (this.pathInUse(this.path)) {
-        this.pathError = 'This path already exists'
+        this.pathError = '该路径已存在'
       } else {
         this.pathError = ''
       }
@@ -152,6 +144,15 @@ export default {
 }
 .page-dialog__content .page-dialog__input{
   width: 100%;
+}
+.page-dialog__content .el-input.is-error >>> .el-input__inner {
+  border-color: #f56c6c;
+}
+.dialog-error {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: #f56c6c;
+  line-height: 1.2;
 }
 
 .page-dialog__actions {

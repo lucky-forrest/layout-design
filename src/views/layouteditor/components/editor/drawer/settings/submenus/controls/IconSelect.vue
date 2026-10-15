@@ -1,13 +1,12 @@
 <template>
-  <div class="material-select__wrapper">
-    <div class="material-select">
-      <label class="material-select__label">{{ label }}</label>
-      <select v-model="currentValue">
-        <slot/>
-      </select>
-      <svgicon v-show="(icon !== '')" :icon="icon" width="22" height="22" color="rgba(0,0,0,.87)"/>
-      <div class="material-select__bottom-line"/>
-    </div>
+  <div class="icon-select__wrapper">
+    <span v-if="label" class="icon-select__label">{{ label }}</span>
+    <el-select
+      v-model="currentValue"
+      :popper-append-to-body="true"
+      class="icon-select__control">
+      <slot/>
+    </el-select>
   </div>
 </template>
 
@@ -30,46 +29,29 @@ export default {
 </script>
 
 <style scoped>
-.material-select__wrapper {
-  display: inline-flex;
-  flex-flow: column;
+.icon-select__wrapper {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  margin-bottom: 14px;
 }
-.material-select {
-  height: 48px;
-  display: inline-flex;
-  position: relative;
-  align-items: flex-end;
+
+.icon-select__label {
+  flex: 0 0 56px;
+  min-width: 0;
   box-sizing: border-box;
-  margin-top: 16px;
-  margin-bottom: 8px;
+  padding-right: 8px;
+  font-size: 12px;
+  color: #606266;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.material-select__label {
-  pointer-events: none;
-  position: absolute;
-  top: 10px;
-  left: 0;
-  font-size: .76rem;
-  color: rgba(0, 0, 0, 0.57);
-}
-.material-select select {
-  outline: none;
-  text-transform: none;
-  border-radius: 0;
-  color: rgba(0, 0, 0, 0.87);
-  font-family: Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  letter-spacing: 0.04em;
+
+.icon-select__control {
+  flex: 1;
+  min-width: 0;
   width: 100%;
-  margin-bottom: 6px;
-  border: none;
-  background: none;
-  appearance: none;
-  font-size: .813rem;
-}
-.material-select__bottom-line {
-  width: 100%;
-  bottom: 0;
-  position: absolute;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
 }
 </style>

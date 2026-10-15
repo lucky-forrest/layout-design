@@ -1,9 +1,21 @@
 
 import { mapState, mapMutations } from 'vuex'
+import { clampZoom } from '@/helpers/zoom'
+import { getNodeBoxSize } from '@/helpers/positionDimension'
+
+/** 适应画布时四周保留的留白（px） */
+const FIT_PADDING = 24
+
 export default{
   data() {
     return {
-      settimer: null
+      settimer: null,
+      /**
+       * 是否处于「自动适应画布」状态。
+       * 用户手动缩放（放大/缩小/100%/缩放到选中）后置为 false，
+       * 之后窗口尺寸变化不再覆盖用户设定的缩放。
+       */
+      isZoomAuto: true
     }
   },
   computed: {
@@ -14,11 +26,11 @@ export default{
   },
   watch: {
     selectedPage: function(val) {
-      this.resizeHandler()
+      this.fitToViewport()
     },
     siderbarOpened() {
       this.settimer = setTimeout(() => {
-        this.resizeHandler()
+        this.fitToViewport()
       }, 200)
     }
   },
@@ -29,14 +41,26 @@ export default{
     window.addEventListener('resize', this.resizeHandler)
   },
   methods: {
+    /** 仅在用户未手动控制过缩放时，才按视口重新适配 */
+    fitToViewport() {
+      if (!this.isZoomAuto) return
+      this.resizeHandler()
+    },
+
     resizeHandler() {
-      try {
-        const pageWidth = Number.parseFloat(`${this.selectedPage.width}`.replace(/(px|%),''/))
-        const layoutWidth = document.querySelector('#mainegg').getBoundingClientRect().width - 20
-        this._updateEditorZoom(layoutWidth / pageWidth)
-      } catch (error) {
-        // console.log(error)
-      }
+      const container = document.getElementById('canvas-main')
+      const page = this.selectedPage
+      if (!container || !page) return
+
+      const pageSize = getNodeBoxSize(page)
+      const availWidth = container.clientWidth - FIT_PADDING
+      const availHeight = container.clientHeight - FIT_PADDING
+      if (!pageSize.width || !pageSize.height || availWidth <= 0 || availHeight <= 0) return
+
+      this._updateEditorZoom(clampZoom(Math.min(
+        availWidth / pageSize.width,
+        availHeight / pageSize.height
+      )))
     },
     ...mapMutations(['_updateEditorZoom'])
   },

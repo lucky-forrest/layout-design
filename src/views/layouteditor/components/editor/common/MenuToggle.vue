@@ -60,7 +60,7 @@ export default {
 }
 
 .menu-toggle__header {
-  padding: 10px 25px;
+  padding: 10px 16px;
   font-size: small;
   font-weight: bold;
   cursor: pointer;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <menu-toggle menu-header="General">
+    <menu-toggle menu-header="常规">
       <dim-pos
         :top="t"
         :bottom="b"
@@ -8,11 +8,9 @@
         :right="r"
         :has-dim="false"
         @change="({type, value}) => emitChanges(type, value)"/>
-      <div class="menu">
-        <stack-order
-          :z-index="z"
-          @change="newValue => emitChanges('zIndex', newValue)"/>
-      </div>
+      <stack-order
+        :z-index="z"
+        @change="newValue => emitChanges('zIndex', newValue)"/>
     </menu-toggle>
   </div>
 </template>
@@ -50,14 +48,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.menu{
-  width: 100%;
-  height: 100%;
-  margin: 1px;
-  margin-bottom: 10px;
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-}
-</style>

@@ -18,7 +18,8 @@ export const downloadProject = 'downloadProject'
 export const uploadVueSourcesToGH = 'uploadVueSourcesToGH'
 export const checkLastSaved = 'checkLastSaved'
 export const syncLocal = 'syncLocal'
-export const loadVueggProject = 'loadVueggProject'
+export const saveProject = 'saveProject'
+export const loadProject = 'loadProject'
 export const clearProject = 'clearProject'
 export const restoreProject = 'restoreProject'
 
@@ -33,6 +34,13 @@ export const changeElementParent = 'changeElementParent'
 export const removeElement = 'removeElement'
 export const rebaseSelectedElements = 'rebaseSelectedElements'
 
+export const alignElements = 'alignElements'
+export const distributeElements = 'distributeElements'
+export const equalizeElements = 'equalizeElements'
+export const setElementsFlag = 'setElementsFlag'
+export const exportElementList = 'exportElementList'
+export const exportLinkList = 'exportLinkList'
+
 // MUTATIONS
 export const addProject = 'addProject'
 export const updateProject = 'updateProject'
@@ -42,9 +50,10 @@ export const createPage = 'createPage'
 export const updatePage = 'updatePage'
 export const deletePage = 'deletePage'
 
-export const createEgglement = 'createEgglement'
-export const updateEgglement = 'updateEgglement'
-export const deleteEgglement = 'deleteEgglement'
+export const createElement = 'createElement'
+export const updateElement = 'updateElement'
+export const updateElements = 'updateElements'
+export const deleteElement = 'deleteElement'
 
 // INTERNAL-MUTATIONS
 export const _toggleAuthorizationStatus = '_toggleAuthorizationStatus'
@@ -59,6 +68,13 @@ export const _toggleCanRedo = '_toggleCanRedo'
 export const _toggleCanUndo = '_toggleCanUndo'
 export const _togglePageDialog = '_togglePageDialog'
 export const _updateEditorZoom = '_updateEditorZoom'
+export const _setEditorScope = '_setEditorScope'
+export const _updateGrid = '_updateGrid'
+export const _setPreviewState = '_setPreviewState'
+export const _setLinkMode = '_setLinkMode'
+export const _addLink = '_addLink'
+export const _removeLink = '_removeLink'
+export const _updateSaveStatus = '_updateSaveStatus'
 
 export const _changeActivePage = '_changeActivePage'
 export const _rebaseActivePage = '_rebaseActivePage'
@@ -91,7 +107,8 @@ const types = {
   downloadProject,
   checkLastSaved,
   syncLocal,
-  loadVueggProject,
+  saveProject,
+  loadProject,
   restoreProject,
   clearProject,
 
@@ -106,6 +123,13 @@ const types = {
   removeElement,
   rebaseSelectedElements,
 
+  alignElements,
+  distributeElements,
+  equalizeElements,
+  setElementsFlag,
+  exportElementList,
+  exportLinkList,
+
   // MUTATIONS
   addProject,
   updateProject,
@@ -115,9 +139,10 @@ const types = {
   updatePage,
   deletePage,
 
-  createEgglement,
-  updateEgglement,
-  deleteEgglement,
+  createElement,
+  updateElement,
+  updateElements,
+  deleteElement,
 
   // INTERNAL-MUTATIONS
   _toggleAuthorizationStatus,
@@ -132,6 +157,13 @@ const types = {
   _toggleCanUndo,
   _togglePageDialog,
   _updateEditorZoom,
+  _setEditorScope,
+  _updateGrid,
+  _setPreviewState,
+  _setLinkMode,
+  _addLink,
+  _removeLink,
+  _updateSaveStatus,
 
   _changeActivePage,
   _rebaseActivePage,

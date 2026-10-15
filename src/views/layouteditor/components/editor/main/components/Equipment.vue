@@ -1,5 +1,7 @@
 <template>
-  <div class="view-element heartbeat" style="background-color:#6D6D6D;">
+  <div
+    :style="{'background-color': stateColors.backgroundColor, 'border-color': stateColors.borderColor}"
+    class="view-element heartbeat">
     <div class="header">
       <span class="view-element-title off">{{ elemObj.primaryKey.replace(/\w+_/,'') }}</span>
       <span v-show="true" class="cimInfo eqpRedAlive">
@@ -29,6 +31,10 @@ export default {
   },
   components: { StageEl },
   mixins: [mixins],
+  /* 未绑定状态键时使用的默认配色 */
+  stateColorDefaults: {
+    backgroundColor: '#6D6D6D'
+  },
   methods: {
     layoutEleClickEventHandler($event) {
       this.$emit('layoutEleClickEvent', $event)

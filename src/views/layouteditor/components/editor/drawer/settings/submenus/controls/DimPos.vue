@@ -1,32 +1,38 @@
 <template>
   <div class="content-wrapper">
-    <div v-if="hasDim" :class="{'no-check': !hasPos}" class="element-set element-set__left">
-      <mdc-textfield v-model="h" :disabled="(h === 'auto')" label="Height" dense/>
+    <div v-if="hasDim" class="element-set">
+      <span class="element-set__label">高度</span>
+      <el-input v-model="h" :disabled="(h === 'auto')"/>
       <input v-if="hasPos" :checked="!isNaN(parseInt(h))" type="checkbox" @change="onCheckChanges('height')">
     </div>
 
-    <div v-if="hasDim" :class="{'no-check': !hasPos}" class="element-set element-set__right">
-      <mdc-textfield v-model="w" :disabled="(w === 'auto')" label="Width" dense/>
+    <div v-if="hasDim" class="element-set">
+      <span class="element-set__label">宽度</span>
+      <el-input v-model="w" :disabled="(w === 'auto')"/>
       <input v-if="hasPos" :checked="!isNaN(parseInt(w))" type="checkbox" @change="onCheckChanges('width')">
     </div>
 
-    <div v-if="hasPos" class="element-set element-set__left">
-      <mdc-textfield v-model="t" :disabled="(t === 'auto')" label="Top" dense/>
+    <div v-if="hasPos" class="element-set">
+      <span class="element-set__label">上</span>
+      <el-input v-model="t" :disabled="(t === 'auto')"/>
       <input :checked="!isNaN(parseInt(t))" type="checkbox" @change="onCheckChanges('top')">
     </div>
 
-    <div v-if="hasPos" class="element-set element-set__right">
-      <mdc-textfield v-model="l" :disabled="(l === 'auto')" label="Left" dense/>
+    <div v-if="hasPos" class="element-set">
+      <span class="element-set__label">左</span>
+      <el-input v-model="l" :disabled="(l === 'auto')"/>
       <input :checked="!isNaN(parseInt(l))" type="checkbox" @change="onCheckChanges('left')">
     </div>
 
-    <div v-if="hasPos" class="element-set element-set__left">
-      <mdc-textfield v-model="b" :disabled="(b === 'auto')" label="Bottom" dense/>
+    <div v-if="hasPos" class="element-set">
+      <span class="element-set__label">下</span>
+      <el-input v-model="b" :disabled="(b === 'auto')"/>
       <input :checked="!isNaN(parseInt(b))" type="checkbox" @change="onCheckChanges('bottom')">
     </div>
 
-    <div v-if="hasPos" class="element-set element-set__right">
-      <mdc-textfield v-model="r" :disabled="(r === 'auto')" label="Right" dense/>
+    <div v-if="hasPos" class="element-set">
+      <span class="element-set__label">右</span>
+      <el-input v-model="r" :disabled="(r === 'auto')"/>
       <input :checked="!isNaN(parseInt(r))" type="checkbox" @change="onCheckChanges('right')">
     </div>
   </div>
@@ -84,7 +90,8 @@ export default {
         type: prop,
         value: (this[prop] === 'auto')
           ? getComputedProp(prop, this.elementO)
-          : 'auto'
+          : 'auto',
+        instant: true
       })
 
       // If the element has no dimension properties,
@@ -104,7 +111,8 @@ export default {
           type: opositeProp,
           value: (this[prop] === 'auto')
             ? 'auto'
-            : getComputedProp(opositeProp, this.elementO)
+            : getComputedProp(opositeProp, this.elementO),
+          instant: true
         })
       }
     },
@@ -119,38 +127,40 @@ export default {
 <style scoped>
 .content-wrapper {
   width: 100%;
-  height: 100%;
-  margin: 1px;
-  margin-bottom: 10px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  padding-top: 2px;
 }
 
 .element-set {
-  display: inline-flex;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  margin-bottom: 8px;
 }
-  .element-set.element-set__right .mdc-textfield-wrapper {
-    margin-left: 8px;
-  }
-  .element-set.element-set__left .mdc-textfield-wrapper {
-    margin-left: 20px;
-  }
-    .element-set.element-set__right.no-check .mdc-textfield-wrapper {
-      margin-right: 20px;
-      margin-left: 12px;
-    }
-    .element-set.element-set__left.no-check .mdc-textfield-wrapper {
-      margin-right: 12px;
-    }
 
-  .element-set input {
-    align-self: center;
-    margin-top: 28px;
-  }
-    .element-set.element-set__right input {
-      margin-right: 20px;
-    }
-    .element-set.element-set__left input {
-      margin-right: 8px;
-    }
+.element-set:last-child {
+  margin-bottom: 14px;
+}
+
+.element-set__label {
+  flex: 0 0 56px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 8px;
+  font-size: 12px;
+  color: #606266;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.element-set .el-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.element-set > input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0 0 0 8px;
+}
 </style>

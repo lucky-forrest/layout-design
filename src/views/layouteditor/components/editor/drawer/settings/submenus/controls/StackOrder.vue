@@ -1,26 +1,27 @@
 <template>
   <div class="wrapper">
-    <span class="label">zIndex: {{ zIndex }}</span>
+    <span class="label">层级</span>
     <div class="icon-bar">
       <svgicon
-        v-tooltip="'auto'"
+        v-tooltip="'自动'"
         icon="system/editor/flip_auto"
-        width="22"
-        height="22"
+        width="18"
+        height="18"
         @click.native="$emit('change', 'auto')"/>
       <svgicon
-        v-tooltip="'flip front'"
+        v-tooltip="'上移一层'"
         icon="system/editor/flip_front"
-        width="22"
-        height="22"
+        width="18"
+        height="18"
         @click.native="$emit('change', (zIndex !== 'auto') ? (zIndex + 1) : 1)"/>
       <svgicon
-        v-tooltip="'flip back'"
+        v-tooltip="'下移一层'"
         icon="system/editor/flip_back"
-        width="22"
-        height="22"
+        width="18"
+        height="18"
         @click.native="$emit('change', (zIndex !== 'auto' && zIndex > 0) ? (zIndex - 1) : 0)"/>
     </div>
+    <span class="value">{{ zIndex }}</span>
   </div>
 </template>
 
@@ -34,30 +35,47 @@ export default {
 
 <style scoped>
 .wrapper {
-  display: inline-flex;
-  margin: 16px 20px 8px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  margin-bottom: 14px;
 }
 
 .label {
-  width: 100%;
-  font-size: .813rem;
-  color: rgba(0, 0, 0, 0.57);
-  text-align: left;
-  margin: 4px 0;
+  flex: 0 0 56px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 8px;
+  font-size: 12px;
+  color: #606266;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .icon-bar {
-  user-select: none;
-  text-align: center;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
+  align-items: center;
 }
-  .icon-bar svg {
-    cursor: pointer;
-    fill: rgba(0,0,0,.54);
-  }
-  .icon-bar svg:hover {
-    fill: rgba(0,0,0,.87);
-  }
+
+.icon-bar svg {
+  cursor: pointer;
+  fill: rgba(0, 0, 0, 0.54);
+}
+
+.icon-bar svg:hover {
+  fill: rgba(0, 0, 0, 0.87);
+}
+
+.value {
+  flex: 0 0 auto;
+  min-width: 30px;
+  font-size: 12px;
+  color: #909399;
+  text-align: right;
+}
 </style>

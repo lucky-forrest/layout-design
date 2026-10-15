@@ -1,15 +1,14 @@
 <template>
   <dialog>
-    <p class="confirm-dialog__title">Do you want to delete "{{ project.title }}" ?</p>
+    <p class="confirm-dialog__title">确定要清空"{{ project.title }}"吗？</p>
     <div class="confirm-dialog__content">
       <p>
-        If you do, all local changes will be lost!<br >
-        ... although in reality you can undo it
+        页面与元件都会被移除，可用 Ctrl+Z 撤销。
       </p>
     </div>
     <div class="confirm-dialog__actions">
-      <mdc-button class="confirm-dialog__delete-btn" unelevated @click="onConfirm">Delete</mdc-button>
-      <mdc-button @click="closeDialog">Cancel</mdc-button>
+      <el-button class="confirm-dialog__delete-btn" type="danger" @click="onConfirm">清空</el-button>
+      <el-button @click="closeDialog">取消</el-button>
     </div>
   </dialog>
 </template>
@@ -17,10 +16,12 @@
 <script>
 import { mapState, mapActions } from 'vuex'
 import { clearProject } from '@/store/types'
+import notify from '@/views/layouteditor/components/mixins/notify'
 import dialogPolyfill from 'dialog-polyfill/dist/dialog-polyfill'
 
 export default {
   name: 'ConfirmDialog',
+  mixins: [notify],
   computed: {
     ...mapState({
       project: state => state.layoutEditor.project
@@ -40,9 +41,14 @@ export default {
       this.$el.showModal()
     },
 
-    onConfirm() {
-      this.clearProject()
+    async onConfirm() {
+      const result = await this.clearProject()
       this.closeDialog()
+      if (result && result.ok === false) {
+        this.notifyError(result.error)
+      } else {
+        this.notifySuccess('已清空项目，可用 Ctrl+Z 撤销')
+      }
     },
 
     closeDialog() {
@@ -81,5 +87,6 @@ export default {
 
 .confirm-dialog__delete-btn {
   background-color: #ea493f !important;
+  border-color: #ea493f !important;
 }
 </style>

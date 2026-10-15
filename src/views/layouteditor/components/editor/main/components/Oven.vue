@@ -11,13 +11,14 @@
 import mixins from './view-common'
 export default {
   mixins: [mixins],
+  /* 未绑定状态键时使用的默认底色 */
+  stateColorDefaults: {
+    backgroundColor: '#C24648'
+  },
   computed: {
     portStatus() {
-      return '#C24648'
+      return this.stateColors.backgroundColor
     }
-  },
-  created() {
-    console.log(this.elemObj.attrs.nickName)
   }
 }
 </script>

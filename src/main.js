@@ -40,14 +40,12 @@ Vue.use(VueSVGIcon, {
 
 import Tooltip from 'vue-directive-tooltip'
 Vue.use(Tooltip, {
-  class: 'tooltip-vuegg',
+  class: 'tooltip',
   placement: 'top',
   delay: 50
 })
 
 import '@/styles/design.scss'
-import VueMDCAdapter from 'vue-mdc-adapter'
-Vue.use(VueMDCAdapter)
 
 Vue.config.productionTip = false
 Vue.config.errorHandler = (err, vm, info) => {

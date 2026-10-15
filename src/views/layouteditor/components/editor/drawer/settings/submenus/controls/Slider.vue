@@ -1,7 +1,14 @@
 <template>
-  <div v-tooltip.left="{content: label + ' (' + currentValue + ')', delay: 0, offset: 0}" class="slider__wrapper">
-    <mdc-slider :min="min" :max="max" :step="step" v-model="currentValue" layout-on="show-settings"/>
-    <svgicon v-show="(icon !== '')" :icon="icon" width="22" height="22" color="rgba(0,0,0,.87)"/>
+  <div class="slider__wrapper">
+    <span v-if="label" class="slider__label">{{ label }}</span>
+    <el-slider
+      :min="Number(min)"
+      :max="Number(max)"
+      :step="step ? Number(step) : 1"
+      v-model="currentValue"
+      class="slider__control"
+    />
+    <span class="slider__value">{{ currentValue }}</span>
   </div>
 </template>
 
@@ -31,10 +38,36 @@ export default {
 
 <style scoped>
 .slider__wrapper {
-  display: inline-flex;
-  margin: 0 20px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  margin-bottom: 14px;
 }
-.slider__wrapper svg {
-  margin: 12px 0 0 10px;
+
+.slider__label {
+  flex: 0 0 56px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 8px;
+  font-size: 12px;
+  color: #606266;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slider__control {
+  flex: 1;
+  min-width: 0;
+  margin: 0 10px;
+}
+
+.slider__value {
+  flex: 0 0 auto;
+  min-width: 30px;
+  font-size: 12px;
+  color: #909399;
+  text-align: right;
 }
 </style>

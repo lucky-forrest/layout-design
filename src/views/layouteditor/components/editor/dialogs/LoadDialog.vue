@@ -1,45 +1,41 @@
 <template>
   <dialog>
-    <p class="load-dialog__title">Load a vuegg project from Github</p>
+    <p class="load-dialog__title">加载工程</p>
     <div class="load-dialog__content">
-      <mdc-textfield
+      <el-input
         v-model="owner"
-        :helptext="ownerError"
-        :class="{'mdc-text-field--invalid': ownerError}"
-        label="Owner"
-        minlength="1"
-        helptext-validation
-        helptext-persistent
-        required
+        :class="{'is-error': ownerError}"
+        placeholder="所有者"
         class="load-dialog__input"
         @input="checkOwner"/>
+      <p v-if="ownerError" class="dialog-error">{{ ownerError }}</p>
 
-      <mdc-textfield
+      <el-input
         v-model="repo"
-        :helptext="repoError"
-        :class="{'mdc-text-field--invalid': repoError}"
-        label="Repository"
-        minlength="1"
-        helptext-validation
-        helptext-persistent
-        required
+        :class="{'is-error': repoError}"
+        placeholder="仓库"
         class="load-dialog__input"
         @input="checkRepo"/>
+      <p v-if="repoError" class="dialog-error">{{ repoError }}</p>
+
+      <p class="dialog-hint">当前版本读取的是本地已保存的工程草稿，远端仓库加载尚未接入。</p>
     </div>
     <div class="load-dialog__actions">
-      <mdc-button :disabled="!valid" unelevated @click="onLoad">Load</mdc-button>
-      <mdc-button @click="closeDialog">Cancel</mdc-button>
+      <el-button :disabled="!valid" type="primary" @click="onLoad">加载</el-button>
+      <el-button @click="closeDialog">取消</el-button>
     </div>
   </dialog>
 </template>
 
 <script>
 import { mapState, mapActions } from 'vuex'
-import { loadVueggProject } from '@/store/types'
+import { loadProject } from '@/store/types'
+import notify from '@/views/layouteditor/components/mixins/notify'
 import dialogPolyfill from 'dialog-polyfill/dist/dialog-polyfill'
 
 export default {
   name: 'LoadDialog',
+  mixins: [notify],
   data: function() {
     return {
       valid: false,
@@ -63,9 +59,9 @@ export default {
   methods: {
     checkOwner() {
       if (!this.owner) {
-        this.ownerError = "Insert the username of the repository's owner"
+        this.ownerError = '请输入仓库所有者的用户名'
       } else if (!this.owner.match(/^[a-z0-9]([a-z0-9-]*){0,38}$/i)) {
-        this.ownerError = 'This is not a valid username'
+        this.ownerError = '用户名无效'
       } else {
         this.ownerError = ''
       }
@@ -74,9 +70,9 @@ export default {
 
     checkRepo() {
       if (!this.repo) {
-        this.repoError = 'Insert the name of the repo to load'
+        this.repoError = '请输入要加载的仓库名称'
       } else if (!this.repo.match(/^[a-z0-9-]+$/i)) {
-        this.repoError = 'This is not a valid repository name'
+        this.repoError = '仓库名称无效'
       } else {
         this.repoError = ''
       }
@@ -92,9 +88,21 @@ export default {
       this.$el.showModal()
     },
 
-    onLoad() {
-      this.loadVueggProject({ origin: 'github', userName: this.owner, repoName: this.repo })
+    async onLoad() {
+      const result = await this.loadProject({
+        origin: 'github',
+        userName: this.owner,
+        repoName: this.repo
+      })
       this.closeDialog()
+
+      if (result && result.ok) {
+        this.notifySuccess('已加载工程《' + result.title + '》')
+      } else if (result && result.empty) {
+        this.notifyWarning('本地还没有保存过的工程草稿')
+      } else {
+        this.notifyError((result && result.error) || '工程加载失败')
+      }
     },
 
     resetDialog() {
@@ -110,7 +118,7 @@ export default {
       this.$el.close()
     },
 
-    ...mapActions([loadVueggProject])
+    ...mapActions([loadProject])
   }
 }
 </script>
@@ -131,6 +139,22 @@ export default {
 }
 .load-dialog__content .load-dialog__input{
   width: 100%;
+}
+.load-dialog__content .el-input.is-error >>> .el-input__inner {
+  border-color: #f56c6c;
+}
+.dialog-error {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: #f56c6c;
+  line-height: 1.2;
+}
+
+.dialog-hint {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, .38);
+  line-height: 1.4;
 }
 
 .load-dialog__actions {

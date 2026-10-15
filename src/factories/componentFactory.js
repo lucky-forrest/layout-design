@@ -15,9 +15,9 @@ export function compInst(component) {
     left: component.left,
     bottom: component.bottom,
     right: component.right,
-    componegg: component.componegg,
-    egglement: component.egglement,
-    containegg: component.containegg
+    componentType: component.componentType,
+    element: component.element,
+    canContain: component.canContain
   }
 }
 

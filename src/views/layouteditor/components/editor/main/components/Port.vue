@@ -12,8 +12,8 @@
           transform: `translate(-50%,-50%) rotate(${elemObj.attrs.rotate}deg)`
         }"
         :color="`${portStatus} r-#000`"
-        width="30px"
-        height="30px"
+        width="100%"
+        height="100%"
       />
     </div>
   </el-tooltip>
@@ -24,9 +24,13 @@ import '@/assets/design/icons'
 import mixins from './view-common'
 export default {
   mixins: [mixins],
+  /* 未绑定状态键（或绑到编号类键）时使用的默认底色 */
+  stateColorDefaults: {
+    backgroundColor: '#C24648'
+  },
   computed: {
     portStatus() {
-      return '#C24648'
+      return this.stateColors.backgroundColor
     }
   }
 }

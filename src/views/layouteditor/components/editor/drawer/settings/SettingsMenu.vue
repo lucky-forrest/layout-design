@@ -51,7 +51,7 @@
 <script>
 import cloneDeep from 'clone-deep'
 import { mapState, mapMutations } from 'vuex'
-import { updatePage, updateEgglement } from '@/store/types'
+import { updatePage, updateElement } from '@/store/types'
 import PageSettings from './submenus/PageSettings.vue'
 import ComponentSettings from './submenus/ComponentSettings.vue'
 import ElementSettings from './submenus/ElementSettings.vue'
@@ -59,6 +59,9 @@ import GlobalSettings from './submenus/GlobalSettings.vue'
 import WebSafeFonts from '@/assets/design/WebSafeFonts'
 import '@/assets/design/icons/system/editor/'
 import '@/assets/design/icons/system/elements/'
+
+/** 文本类输入合并提交的等待时间（ms） */
+const TEXT_CHANGE_DELAY = 400
 
 export default {
   name: 'SettingsMenu',
@@ -83,15 +86,17 @@ export default {
       attrs: {},
       styles: {},
       classes: {},
-      webSafeFonts: WebSafeFonts
+      webSafeFonts: WebSafeFonts,
+      textChangeTimer: null,
+      pendingTextChange: null
     }
   },
   computed: {
     selectionTitle() {
       return (this.selectedElements.length === 0)
-        ? 'Page'
+        ? '画布'
         : (this.selectedElements.length > 1)
-          ? 'Multiple Items'
+          ? '多个元素'
           : this.selectedElements[0].name
     },
     selectionIcon() {
@@ -151,7 +156,19 @@ export default {
       }
     }
   },
+  beforeDestroy: function() {
+    // 销毁前把待提交的文本改动落回「输入时选中的那个对象」，避免输入丢失
+    this.flushTextChange()
+  },
   methods: {
+    /** 当前编辑对象及其类型，用于把提交绑定到发起输入的那个对象 */
+    targetContext() {
+      return {
+        selectionType: this.selectionType,
+        item: this.selectedItem
+      }
+    },
+
     onPropChange(changeData) {
       if (changeData.value === '') return
       const newValue = {}
@@ -162,38 +179,62 @@ export default {
         this[changeData.type] = newValue[changeData.type] = changeData.value
       }
 
+      if (changeData.isText) {
+        // 文本/数值输入逐字符触发，合并成一次提交，保证撤销是一步一步的
+        this.scheduleTextChange(newValue)
+        return
+      }
+
+      this.flushTextChange()
       this.saveChanges(newValue)
     },
 
-    saveChanges(newValue) {
-      if (this.selectionType === 'page') {
+    scheduleTextChange(newValue) {
+      this.pendingTextChange = {
+        value: newValue,
+        context: this.targetContext()
+      }
+      if (this.textChangeTimer) window.clearTimeout(this.textChangeTimer)
+      this.textChangeTimer = window.setTimeout(() => {
+        this.textChangeTimer = null
+        this.flushTextChange()
+      }, TEXT_CHANGE_DELAY)
+    },
+
+    flushTextChange() {
+      if (this.textChangeTimer) {
+        window.clearTimeout(this.textChangeTimer)
+        this.textChangeTimer = null
+      }
+      const pending = this.pendingTextChange
+      this.pendingTextChange = null
+      if (pending) this.saveChanges(pending.value, pending.context)
+    },
+
+    saveChanges(newValue, context) {
+      const target = context || this.targetContext()
+      if (target.selectionType === 'page') {
         this.updatePage({
-          page: this.activePage,
+          page: target.item,
           ...newValue
         })
-      } else if (this.selectionType === 'multiple') {
-        this.selectedItem.map(egglement => this.updateEgglement({
-          egglement,
+      } else if (target.selectionType === 'multiple') {
+        target.item.map(element => this.updateElement({
+          element,
           ...newValue
         }))
       } else {
-        this.updateEgglement({
-          egglement: this.selectedItem,
+        this.updateElement({
+          element: target.item,
           ...newValue
         })
       }
     },
 
-    ...mapMutations([updatePage, updateEgglement])
+    ...mapMutations([updatePage, updateElement])
   }
 }
 </script>
-
-<style>
-  .menus-wrapper input {
-    font-size: .813rem !important;
-  }
-</style>
 
 <style scoped>
   .menus-wrapper {
@@ -207,10 +248,11 @@ export default {
   }
 
   .selection-title__wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 5;
     display: inline-flex;
     user-select: none;
-    /*  min-height: 22px;
-max-height: 22px; */
     padding: 12px 16px;
     background-color: #ffffff;
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
@@ -224,58 +266,5 @@ max-height: 22px; */
     padding: 2px 0 0 8px;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .menu {
-    width: 100%;
-    height: 100%;
-    margin: 1px;
-    margin-bottom: 10px;
-    display: grid;
-  }
-
-  .dimension-menu,
-  .position-menu {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .text-menu,
-  .color-menu,
-  .image-menu {
-    grid-template-columns: repeat(1, 1fr);
-  }
-
-  .icon-bar {
-    user-select: none;
-    text-align: center;
-    margin: 16px 0 4px;
-  }
-
-  .icon-bar svg {
-    margin: 0 15px;
-    cursor: pointer;
-  }
-
-  .text-input,
-  .item-wrapper {
-    margin: 0 20px 10px;
-  }
-
-  .color-picker__wrapper {
-    display: inline-flex;
-    margin: 16px 20px 8px;
-  }
-
-  .slider__wrapper {
-    display: inline-flex;
-    margin: 0 20px;
-  }
-
-  .slider__wrapper svg {
-    margin: 12px 0 0 10px;
-  }
-
-  .mini-text-input {
-    margin: 0 20px;
   }
 </style>

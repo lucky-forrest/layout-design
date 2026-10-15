@@ -6,7 +6,7 @@ import shortid from 'shortid'
  * @param {object} el : Element to register
  * @param {string} [parentId] : Id of the parent element
  *
- * @return {object} : New element (cloned from egglement) with newly assigned ids
+ * @return {object} : New element (cloned from element) with newly assigned ids
  */
 export function setElId(el, parentId) {
   let elId = shortid.generate()

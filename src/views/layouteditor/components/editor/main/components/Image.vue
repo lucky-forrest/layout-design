@@ -9,8 +9,8 @@
         top: '50%',
         transform: `translate(-50%,-50%) rotate(${elemObj.attrs.rotate}deg)`
       }"
-      :width="`${elemObj.width}`.replace(/px/,'px')"
-      :height="`${elemObj.height}`.replace(/px/,'px')" />
+      width="100%"
+      height="100%" />
   </div>
 </template>
 <script>
