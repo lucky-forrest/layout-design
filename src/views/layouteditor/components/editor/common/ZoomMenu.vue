@@ -10,7 +10,7 @@
       />
     </button>
 
-    <div class="zoom-value">{{ Math.round(zoom * 100) + '%' }}</div>
+    <div :key="Math.round(zoom * 100)" class="zoom-value">{{ Math.round(zoom * 100) + '%' }}</div>
 
     <button v-tooltip.right="'缩小'" :disabled="!canZoomOut" class="action-btn" @click="zoomOut">
       <svgicon
@@ -113,14 +113,27 @@ export default {
   user-select: none;
   outline: none;
 }
-.action-btn:hover {
-  background-color: rgba(238, 238, 238, 0.038);
+.action-btn:hover:not(:disabled) {
+  background-color: rgba(238, 238, 238, 0.12);
 }
-.action-btn:active {
+.action-btn:active:not(:disabled) {
   background-color: rgba(238, 238, 238, 0.38);
+}
+.action-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, .9);
+  outline-offset: 2px;
 }
 .action-btn * {
   vertical-align: middle;
+}
+.action-btn .vue-svg-icon {
+  transition: transform .16s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.action-btn:hover:not(:disabled) .vue-svg-icon {
+  transform: scale(1.12);
+}
+.action-btn:active:not(:disabled) .vue-svg-icon {
+  transform: scale(.88);
 }
 .action-btn:disabled {
   cursor: not-allowed;
@@ -148,5 +161,11 @@ export default {
   text-align: center;
   color: #fff;
   font-size: small;
+  animation: zoom-pop .22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes zoom-pop {
+  0% { transform: scale(.9); }
+  100% { transform: scale(1); }
 }
 </style>

@@ -491,6 +491,13 @@ export default {
   position: absolute;
   border: 1px solid #03a9f4;
   background-color: rgba(3, 169, 244, .08);
+  /* 框选开始的一瞬淡入，拖动过程不跟手，松手后由 v-show 直接移除 */
+  animation: selection-in .15s ease;
+}
+
+@keyframes selection-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* 对齐参考线：画在容器内，与元件同一坐标系，自动跟随缩放 */

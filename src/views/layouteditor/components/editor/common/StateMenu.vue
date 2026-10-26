@@ -12,7 +12,10 @@
         :label="item.label"
         :value="item.value"/>
     </el-select>
-    <span :title="tip" :style="{ backgroundColor: dotColor }" class="state-menu__dot"/>
+    <span
+      :title="tip"
+      :class="['state-menu__dot', { 'state-menu__dot--alarm': previewState === 'alarm' }]"
+      :style="{ backgroundColor: dotColor }"/>
   </div>
 </template>
 
@@ -78,5 +81,16 @@ export default {
   height: 8px;
   margin-left: 6px;
   border-radius: 50%;
+  transition: background-color .25s ease;
+}
+
+/* 模拟告警状态：圆点柔光脉冲，提示当前导出会是告警配色 */
+.state-menu__dot--alarm {
+  animation: state-alarm-pulse 1s ease-in-out infinite;
+}
+
+@keyframes state-alarm-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(194, 70, 72, .6); }
+  50% { box-shadow: 0 0 0 5px rgba(194, 70, 72, 0); }
 }
 </style>

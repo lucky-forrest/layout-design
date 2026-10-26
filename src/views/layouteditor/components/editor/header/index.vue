@@ -174,6 +174,7 @@ export default {
   height: 7px;
   margin-right: 6px;
   border-radius: 50%;
+  transition: background-color .3s ease;
 }
 
 .save-dot--saved {
@@ -182,6 +183,12 @@ export default {
 
 .save-dot--dirty {
   background-color: #e6a23c;
+  animation: save-dot-pulse 1.4s ease-in-out 2;
+}
+
+@keyframes save-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(230, 162, 60, .55); }
+  50% { box-shadow: 0 0 0 4px rgba(230, 162, 60, 0); }
 }
 
 .save-status__text {

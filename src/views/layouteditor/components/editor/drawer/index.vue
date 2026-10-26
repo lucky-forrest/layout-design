@@ -131,16 +131,30 @@ export default {
   padding-top: 20px;
   height: 64px;
   cursor: pointer;
-  transition: background-color .15s ease;
+  transition: background-color .15s ease, transform .12s ease;
 }
 .tab:hover {
   background-color: rgba(43, 106, 115, .08);
+}
+.tab:active {
+  transform: scale(.94);
 }
 .tab--active {
   background-color: rgba(43, 106, 115, .12);
 }
 .tab--active:hover {
   background-color: rgba(43, 106, 115, .16);
+}
+/* 页签图标颜色由 svgicon 以 fill/stroke 属性写入，过渡这两项即可平滑变色 */
+.tab .vue-svg-icon {
+  transition: transform .16s cubic-bezier(.4, 0, .2, 1);
+}
+.tab .vue-svg-icon >>> path,
+.tab .vue-svg-icon >>> use {
+  transition: fill .2s ease, stroke .2s ease;
+}
+.tab:hover .vue-svg-icon {
+  transform: scale(1.08);
 }
 .tab-bar {
   display: flex;
@@ -157,12 +171,20 @@ export default {
   height: 2px;
   position: absolute;
   background-color: #2b6a73;
-  transition: all .2s cubic-bezier(.4,0,.4,1).01s;
+  transition: left .2s cubic-bezier(.4, 0, .2, 1), right .2s cubic-bezier(.4, 0, .2, 1);
 }
 .tab-content {
   flex: 1;
   min-height: 0;
   overflow: hidden;
   margin-top: 1px;
+}
+/* 页签内容切换：v-show 切换会触发 CSS 动画重放，实现淡入上移 */
+.tab-content > * {
+  animation: tab-panel-in .24s cubic-bezier(.4, 0, .2, 1);
+}
+@keyframes tab-panel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

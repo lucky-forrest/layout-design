@@ -2,8 +2,12 @@
   <div v-show="!hidden" class="menu-toggle">
     <div class="menu-toggle__header" @click="toggleMenu()">
       <span>{{ menuHeader }}</span>
-      <svgicon v-if="isClosed" icon="system/expand" width="14" height="14" color="#737373"/>
-      <svgicon v-else icon="system/collapse" width="14" height="14" color="#737373"/>
+      <svgicon
+        :key="isClosed ? 'expand' : 'collapse'"
+        :icon="isClosed ? 'system/expand' : 'system/collapse'"
+        width="14"
+        height="14"
+        color="#737373"/>
     </div>
     <div ref="content" :class="{'is-closed': isClosed}" :style="elStyle" class="menu-toggle__content">
       <slot/>
@@ -77,8 +81,14 @@ export default {
   user-select: none;
 }
 
-.menu-toggle__header .svg-icon {
+.menu-toggle__header .vue-svg-icon {
   display: inline-block;
+  animation: toggle-icon-pop .2s cubic-bezier(.4, 0, .2, 1);
+}
+
+@keyframes toggle-icon-pop {
+  0% { transform: scale(.6) rotate(-90deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 
 .menu-toggle__content {

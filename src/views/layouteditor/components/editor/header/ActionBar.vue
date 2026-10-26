@@ -248,21 +248,43 @@ export default {
   border: 0px none;
   user-select: none;
   outline: none;
+  transition: background-color .15s ease, transform .12s cubic-bezier(.4, 0, .2, 1);
 }
-.action-btn:hover {
-  background-color: rgba(43, 106, 115, 0.038);
+.action-btn:hover:not(:disabled) {
+  background-color: rgba(43, 106, 115, 0.12);
 }
-.action-btn:active {
+.action-btn:active:not(:disabled) {
   background-color: rgba(43, 106, 115, 0.38);
+  transform: scale(.9);
+}
+.action-btn:focus-visible {
+  outline: 2px solid #2b6a73;
+  outline-offset: 2px;
 }
 .action-btn * {
   vertical-align: middle;
+}
+.action-btn .vue-svg-icon {
+  transition: transform .16s cubic-bezier(.4, 0, .2, 1);
+}
+.action-btn:hover:not(:disabled) .vue-svg-icon {
+  transform: scale(1.12);
+}
+.action-btn:active:not(:disabled) .vue-svg-icon {
+  transform: scale(.86);
+}
+.action-btn:disabled {
+  cursor: not-allowed;
+  opacity: .85;
 }
 
 /* 连线模式：按钮点亮，避免用户不知道该在哪里点第二下 */
 .action-btn--on,
 .action-btn--on:hover {
   background-color: #2b6a73;
+}
+.action-btn--on .vue-svg-icon {
+  transform: scale(1);
 }
 
 /* 隐藏的文件选择框：由文件夹按钮以编程方式唤起 */

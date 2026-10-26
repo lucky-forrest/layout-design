@@ -31,34 +31,38 @@
       <span class="scale-legend__text">{{ scaleLegend.text }}</span>
     </div>
 
-    <div v-if="scopeTrail.length" class="scope-bar">
-      <a class="scope-crumb" title="返回页面层级" @click="exitScope">页面</a>
-      <span v-for="node in scopeTrail" :key="node.id" class="scope-node">
-        <span class="scope-sep">/</span>
-        <span v-if="node.id === editorScopeId" class="scope-crumb scope-crumb--current">
-          {{ scopeLabel(node) }}
+    <transition name="fade-slide">
+      <div v-if="scopeTrail.length" class="scope-bar">
+        <a class="scope-crumb" title="返回页面层级" @click="exitScope">页面</a>
+        <span v-for="node in scopeTrail" :key="node.id" class="scope-node">
+          <span class="scope-sep">/</span>
+          <span v-if="node.id === editorScopeId" class="scope-crumb scope-crumb--current">
+            {{ scopeLabel(node) }}
+          </span>
+          <a
+            v-else
+            :title="'回到 ' + scopeLabel(node)"
+            class="scope-crumb"
+            @click="setScope(node.id)">
+            {{ scopeLabel(node) }}
+          </a>
         </span>
-        <a
-          v-else
-          :title="'回到 ' + scopeLabel(node)"
-          class="scope-crumb"
-          @click="setScope(node.id)">
-          {{ scopeLabel(node) }}
-        </a>
-      </span>
-      <span class="scope-hint">双击容器进入下一层，Esc 返回上一层</span>
-    </div>
+        <span class="scope-hint">双击容器进入下一层，Esc 返回上一层</span>
+      </div>
+    </transition>
 
-    <div v-if="hud.visible" :style="hudStyle" class="drag-hud">
-      <span class="drag-hud__row">X {{ hud.left }} · Y {{ hud.top }}</span>
-      <span class="drag-hud__row drag-hud__row--strong">
-        {{ hud.width }} × {{ hud.height }} px
-      </span>
-      <span v-if="hudMm" class="drag-hud__row drag-hud__row--dim">{{ hudMm }}</span>
-      <span v-if="hud.count > 1" class="drag-hud__row drag-hud__row--dim">
-        共 {{ hud.count }} 个元件
-      </span>
-    </div>
+    <transition name="fade-slide">
+      <div v-if="hud.visible" :style="hudStyle" class="drag-hud">
+        <span class="drag-hud__row">X {{ hud.left }} · Y {{ hud.top }}</span>
+        <span class="drag-hud__row drag-hud__row--strong">
+          {{ hud.width }} × {{ hud.height }} px
+        </span>
+        <span v-if="hudMm" class="drag-hud__row drag-hud__row--dim">{{ hudMm }}</span>
+        <span v-if="hud.count > 1" class="drag-hud__row drag-hud__row--dim">
+          共 {{ hud.count }} 个元件
+        </span>
+      </div>
+    </transition>
 
     <zoom-menu
       :zoom="zoom"
@@ -601,5 +605,16 @@ export default {
 .scope-hint {
   padding-left: 12px;
   color: rgba(255, 255, 255, 0.55);
+}
+
+/* 面包屑与拖动浮层的出现/消失过渡 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity .18s ease, transform .18s ease;
+}
+.fade-slide-enter,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 </style>

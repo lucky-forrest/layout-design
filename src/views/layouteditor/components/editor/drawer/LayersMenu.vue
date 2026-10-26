@@ -43,8 +43,12 @@
         :title="row.tip"
         @click="selectNode(row, $event)">
         <span
-          :class="['layer-caret', { 'layer-caret--empty': !row.hasChildren }]"
-          @click.stop="toggleExpand(row)">{{ row.hasChildren ? (row.opened ? '▾' : '▸') : '' }}</span>
+          :class="['layer-caret', { 'layer-caret--open': row.opened, 'layer-caret--empty': !row.hasChildren }]"
+          @click.stop="toggleExpand(row)">
+          <svg viewBox="0 0 24 24" width="12" height="12">
+            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z" fill="currentColor"/>
+          </svg>
+        </span>
         <span class="layer-icon">
           <svgicon :icon="'system/elements/' + row.icon" :original="true" width="14" height="14"/>
         </span>
@@ -329,6 +333,7 @@ function matchNode(node, keyword) {
   cursor: pointer;
   user-select: none;
   border-left: 2px solid transparent;
+  transition: background-color .15s ease, border-color .15s ease;
 }
 
 .layer-row:hover {
@@ -381,12 +386,18 @@ function matchNode(node, keyword) {
   cursor: pointer;
   outline: none;
   opacity: .7;
-  transition: opacity .15s ease, background-color .15s ease;
+  transition: opacity .15s ease, background-color .15s ease, transform .15s cubic-bezier(.4, 0, .2, 1);
 }
 
 .layer-expand-toggle:hover {
   opacity: 1;
   background-color: rgba(43, 106, 115, .12);
+  transform: scale(1.1);
+}
+
+.layer-expand-toggle:focus-visible {
+  outline: 2px solid #2b6a73;
+  outline-offset: 1px;
 }
 
 .layer-row--active {
@@ -413,11 +424,24 @@ function matchNode(node, keyword) {
 }
 
 .layer-caret {
-  flex: 0 0 12px;
-  width: 12px;
+  flex: 0 0 14px;
+  width: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #6f7d7d;
-  font-size: 11px;
-  text-align: center;
+  cursor: pointer;
+}
+.layer-caret svg {
+  transition: transform .18s cubic-bezier(.4, 0, .2, 1);
+  transform: rotate(-90deg);
+}
+.layer-caret--open svg {
+  transform: rotate(0deg);
+}
+.layer-caret--empty {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .layer-icon {
@@ -460,6 +484,7 @@ function matchNode(node, keyword) {
   align-items: center;
   flex: 0 0 auto;
   opacity: 0;
+  transition: opacity .15s ease;
 }
 
 .layer-row:hover .layer-tools,
@@ -479,10 +504,17 @@ function matchNode(node, keyword) {
   color: #4b6161;
   cursor: pointer;
   outline: none;
+  transition: color .15s ease, transform .15s cubic-bezier(.4, 0, .2, 1);
 }
 
 .layer-tools button:hover {
   color: #2b6a73;
+  transform: scale(1.15);
+}
+
+.layer-tools button:focus-visible {
+  outline: 2px solid #2b6a73;
+  outline-offset: 1px;
 }
 
 .layers-empty {

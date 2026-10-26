@@ -22,15 +22,13 @@
         v-for="handle in handles"
 
         :key="handle"
-        :class="handle"
-        :style="{ display: active ? 'block' : 'none'}"
+        :class="[handle, { 'is-visible': active }]"
         data-mr-handle="true"
         class="handle"/>
     </template>
     <div
       v-if="!resizable"
-      :style="{ display: active ? 'block' : 'none'}"
-      class="selection-box"/>
+      :class="['selection-box', { 'is-visible': active }]"/>
   </div>
 </template>
 
@@ -154,12 +152,19 @@ export default {
 .mr-el {
   position: absolute;
   box-sizing: border-box;
+  /* 新元件入场：淡入 + 轻微上浮，拖拽/移动只改 top/left 不会重放 */
+  animation: mr-el-in .18s cubic-bezier(.4,0,.2,1);
 }
 .mr-el:hover {
   cursor: move;
 }
 .mr-el.is-locked:hover {
   cursor: not-allowed;
+}
+
+@keyframes mr-el-in {
+  0% { opacity: 0; transform: translateY(3px) scale(.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 .mr-el > * {
   margin: 0;
@@ -189,9 +194,21 @@ export default {
   border: 2px solid #03a9f4;
 }
 
+/* 选中态手柄与选框：淡入淡出出现/消失，不再硬切 display */
+.handle,
+.selection-box {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s cubic-bezier(.4,0,.2,1);
+}
+.handle.is-visible,
+.selection-box.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .handle {
   box-sizing: border-box;
-  display: none;
   position: absolute;
   width: 10px;
   height: 10px;
@@ -204,6 +221,10 @@ export default {
   left: -3px;
   cursor: nwse-resize;
   background: #03a9f4;
+  transform: scale(.55);
+}
+.tl.is-visible {
+  transform: scale(1);
 }
 .mt {
   top: 0;
@@ -219,6 +240,10 @@ export default {
   right: -3px;
   cursor: nesw-resize;
   background: #03a9f4;
+  transform: scale(.55);
+}
+.tr.is-visible {
+  transform: scale(1);
 }
 .mr {
   top: 0;
@@ -235,6 +260,10 @@ export default {
   right: -3px;
   cursor: nwse-resize;
   background: #03a9f4;
+  transform: scale(.55);
+}
+.br.is-visible {
+  transform: scale(1);
 }
 .mb {
   bottom: 0;
@@ -250,6 +279,10 @@ export default {
   left: -3px;
   cursor: nesw-resize;
   background: #03a9f4;
+  transform: scale(.55);
+}
+.bl.is-visible {
+  transform: scale(1);
 }
 .ml {
   top: 0;

@@ -166,6 +166,16 @@ dialog, dialog::backdrop {
     fill: none;
     stroke: currentColor;
 }
+
+/* 系统开启了「减少动态效果」时，关闭非必要的动画与过渡 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 </style>
 
 <style scoped>

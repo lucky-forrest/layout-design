@@ -320,10 +320,20 @@ export default {
   text-align: center;
   border-radius: 2px;
   background-color: transparent;
-  transition: all 0.20s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform .16s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.20s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .el-menu__el:hover{
   background-color: rgba(0,0,0,.08);
+  transform: translateY(-2px);
+}
+.el-menu__el:active{
+  transform: translateY(0) scale(.96);
+}
+.el-menu__el .vue-svg-icon {
+  transition: transform .16s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.el-menu__el:hover .vue-svg-icon {
+  transform: scale(1.12);
 }
 .el-menu__el span {
   display: block;
@@ -351,7 +361,7 @@ export default {
   cursor: pointer;
   outline: none;
   opacity: 0;
-  transition: opacity .15s ease, color .15s ease, background-color .15s ease;
+  transition: opacity .15s ease, color .15s ease, background-color .15s ease, transform .15s cubic-bezier(.4, 0, .2, 1);
 }
 
 /* 悬停卡片时星标浮现；已收藏的常显 */
@@ -363,6 +373,12 @@ export default {
 .el-menu__star:hover {
   background-color: rgba(0, 0, 0, .06);
   color: #2b6a73;
+  transform: scale(1.18);
+}
+
+.el-menu__star:focus-visible {
+  outline: 2px solid #2b6a73;
+  outline-offset: 1px;
 }
 
 /* 已收藏：金色实心星 */

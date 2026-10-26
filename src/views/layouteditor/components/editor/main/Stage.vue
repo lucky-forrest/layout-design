@@ -488,6 +488,7 @@ export default {
         oldVal.style.borderWidth = this.defaultBorder.width
         oldVal.style.borderStyle = this.defaultBorder.style
         oldVal.style.borderColor = this.defaultBorder.color
+        oldVal.classList.remove('is-drop-target')
       }
 
       if (newVal) {
@@ -497,6 +498,7 @@ export default {
         newVal.style.borderWidth = DROP_BORDER.width
         newVal.style.borderStyle = DROP_BORDER.style
         newVal.style.borderColor = DROP_BORDER.color
+        newVal.classList.add('is-drop-target')
       }
     }
   }
@@ -507,6 +509,15 @@ export default {
 html.droppable,
 html.droppable * {
   cursor: copy !important;
+}
+
+/* 拖动悬停在可放入的容器上：边框颜色脉冲提示可放置 */
+.is-drop-target {
+  animation: drop-target-pulse .8s ease-in-out infinite alternate;
+}
+@keyframes drop-target-pulse {
+  from { border-color: #f1867f; }
+  to { border-color: #ffc2bc; }
 }
 </style>
 
@@ -519,6 +530,8 @@ html.droppable * {
   transform-origin: 0 0;
   user-select: none;
   border: 2px solid #e3e3e3;
+  /* 缩放/适应/100% 时画布平滑过渡，元件拖动只改 top/left 不受影响 */
+  transition: transform .18s cubic-bezier(.4, 0, .2, 1);
   /* for paper style */
   /* box-shadow:
     0 2px 2px 0 rgba(0, 0, 0, 0.14),

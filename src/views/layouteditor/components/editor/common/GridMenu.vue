@@ -94,10 +94,20 @@ export default {
   line-height: 20px;
   cursor: pointer;
   outline: none;
+  transition: background-color .15s ease, transform .12s cubic-bezier(.4, 0, .2, 1);
 }
 
 .grid-btn:hover {
   background-color: rgba(43, 106, 115, .08);
+}
+
+.grid-btn:active {
+  transform: scale(.94);
+}
+
+.grid-btn:focus-visible {
+  outline: 2px solid #2b6a73;
+  outline-offset: 1px;
 }
 
 .grid-btn--on {
