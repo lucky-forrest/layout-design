@@ -24,6 +24,11 @@ const nameLength = 4
 
 const webpackConfig = merge(baseWebpackConfig, {
   mode: 'production',
+  // 体积性能警告（element-ui 整包、static 下大体积视频）属于有意产物，
+  // 每轮构建重复提示无实际增益，关闭 hints，体积监控走 webpack-bundle-analyzer
+  performance: {
+    hints: false
+  },
   module: {
     rules: utils.styleLoaders({
       sourceMap: config.build.productionSourceMap,

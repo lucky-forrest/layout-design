@@ -27,3 +27,6 @@ selenium-debug.log
 *.sln
 
 package-lock.json
+
+# 构建产物压缩包
+dist.zip

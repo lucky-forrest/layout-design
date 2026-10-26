@@ -73,14 +73,20 @@ exports.cssLoaders = function(options) {
       webpackImporter: false,
       sassOptions: {
         indentedSyntax: true,
-        includePaths: [resolve('node_modules')]
+        includePaths: [resolve('node_modules')],
+        // 抑制 Dart Sass 的弃用警告：本项目大量使用 @import，且 sass-loader 8 走 legacy API
+        quietDeps: true,
+        silenceDeprecations: ['legacy-js-api', 'import']
       }
     }),
     scss: generateLoaders('sass', {
       implementation: require('sass'),
       webpackImporter: false,
       sassOptions: {
-        includePaths: [resolve('node_modules')]
+        includePaths: [resolve('node_modules')],
+        // 抑制 Dart Sass 的弃用警告：本项目大量使用 @import，且 sass-loader 8 走 legacy API
+        quietDeps: true,
+        silenceDeprecations: ['legacy-js-api', 'import']
       }
     }),
     stylus: generateLoaders('stylus'),

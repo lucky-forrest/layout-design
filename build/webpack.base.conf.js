@@ -29,6 +29,9 @@ module.exports = {
   output: {
     path: config.build.assetsRoot,
     filename: '[name].js',
+    // webpack 4 默认用 md4 哈希，OpenSSL 3（Node >= 17）已禁用该算法，
+    // 会导致 ERR_OSSL_EVP_UNSUPPORTED 构建失败。改用 sha256，兼容所有 Node 版本。
+    hashFunction: 'sha256',
     publicPath:
       process.env.NODE_ENV === 'production'
         ? config.build.assetsPublicPath
